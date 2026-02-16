@@ -29,7 +29,7 @@ jobs:
       - name: Download Release RPMs
         uses: robinraju/release-downloader@v1.9
         with:
-          latest: true
+          tag: ${{ github.event.release.tag_name || 'latest' }}
           fileName: "*.noarch.rpm"
           out-file-path: "rpm-packages"
 
@@ -100,7 +100,7 @@ jobs:
       - name: Download Release DEBs
         uses: robinraju/release-downloader@v1.9
         with:
-          latest: true
+          tag: ${{ github.event.release.tag_name || 'latest' }}
           fileName: "*.deb"
           out-file-path: "deb-packages"
 
