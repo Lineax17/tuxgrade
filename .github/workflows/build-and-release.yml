@@ -44,25 +44,27 @@ jobs:
           KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
           echo "${KEY_FPR}:6:" | gpg --import-ownertrust
 
-          # Configure GPG for non-interactive use in CI
-          export GPG_TTY=$(tty) || export GPG_TTY=/dev/null
+          # Configure GPG for non-interactive use in CI (no TTY)
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
 
-          # Configure GPG to use loopback pinentry (no GUI)
+          # Configure GPG to use loopback pinentry (no GUI, no TTY)
           cat > ~/.gnupg/gpg.conf << 'EOF'
           use-agent
           pinentry-mode loopback
+          batch
+          no-tty
           EOF
 
           cat > ~/.gnupg/gpg-agent.conf << 'EOF'
           allow-loopback-pinentry
           max-cache-ttl 3600
+          default-cache-ttl 3600
           EOF
 
           # Restart GPG agent to apply new configuration
           gpgconf --kill gpg-agent || true
-          gpg-agent --daemon || true
+          gpg-agent --daemon --allow-loopback-pinentry || true
 
           echo "✓ GPG configured for CI environment"
 
