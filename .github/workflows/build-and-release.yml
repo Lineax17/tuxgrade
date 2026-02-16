@@ -90,6 +90,9 @@ jobs:
           echo "✓ RPM build complete"
           ls -lh output/
 
+          # Fix permissions (container creates files as root)
+          sudo chown -R $(id -u):$(id -g) output/
+
       - name: Sign RPM Package
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
@@ -226,6 +229,9 @@ jobs:
 
           echo "✓ DEB build complete"
           ls -lh output/
+
+          # Fix permissions (container creates files as root)
+          sudo chown -R $(id -u):$(id -g) output/
 
       - name: Sign DEB Package
         env:
