@@ -100,7 +100,7 @@ jobs:
       - name: Download Release DEBs
         uses: robinraju/release-downloader@v1.9
         with:
-          tag: ${{ github.event.release.tag_name || 'latest' }}
+          latest: true
           fileName: "*.deb"
           out-file-path: "deb-packages"
 
