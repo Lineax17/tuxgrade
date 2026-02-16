@@ -337,7 +337,7 @@ jobs:
           cat > release-notes.md << 'EOF'
           ## Tuxgrade ${{ steps.version.outputs.version }}
 
-          **🔒 Security:** DEB and RPM packages are distributed via a GPG-signed APT repository for secure installation.
+          **🔒 Security:** DEB and RPM packages are distributed via GPG-signed repositories for secure installation.
 
           ### Installation
 
