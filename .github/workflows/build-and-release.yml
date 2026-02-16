@@ -128,6 +128,7 @@ jobs:
 
           # Get key fingerprint
           KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+          echo "Using GPG key: $KEY_FPR"
 
           # Create passphrase file for GPG (more reliable than fd redirection)
           echo "$GPG_PASSPHRASE" > /tmp/gpg-passphrase.txt
@@ -142,17 +143,28 @@ jobs:
           %__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --pinentry-mode loopback --digest-algo SHA512 --passphrase-file /tmp/gpg-passphrase.txt --detach-sign --output %{__signature_filename} %{__plaintext_filename}
           EOF
 
+          echo "RPM macros configured"
+
           # Sign all RPM packages
           for rpm in output/*.rpm; do
             if [ -f "$rpm" ]; then
               echo "Signing: $(basename $rpm)"
-              rpmsign --addsign "$rpm" 2>/dev/null || rpm --addsign "$rpm"
+              
+              # Try rpmsign with error output
+              if ! rpmsign --addsign "$rpm" 2>&1; then
+                echo "Warning: rpmsign failed, trying rpm --addsign..."
+                if ! rpm --addsign "$rpm" 2>&1; then
+                  echo "❌ ERROR: Both rpmsign and rpm --addsign failed"
+                  exit 1
+                fi
+              fi
               
               # Verify signature was created by checking if signature header exists
               SIG_INFO=$(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" 2>/dev/null | head -1)
               if [ -z "$SIG_INFO" ] || [ "$SIG_INFO" = "(none)" ]; then
                 echo "❌ ERROR: Signing failed for $(basename $rpm)"
                 echo "  No GPG signature found in package"
+                rpm -qpi "$rpm" | head -20
                 exit 1
               fi
               
