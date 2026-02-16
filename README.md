@@ -62,6 +62,8 @@ tuxgrade [options]
 
 ### Debian / Ubuntu / Linux Mint / Pop!\_OS / Zorin OS
 
+**Note:** The Debian repository does not work at the moment. I am still figuring out how to properly implement the GPG verification.
+
 1. **Import GPG signing key:**
 
    ```bash
