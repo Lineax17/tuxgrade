@@ -46,15 +46,17 @@ jobs:
             "
 
       - name: Sign RPM repository
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           cd rpm-packages/repodata
 
           # Get Key ID dynamically
           KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
 
-          # Sign repomd.xml
-          gpg --default-key $KEY_ID --batch --yes \
-              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+          # Sign repomd.xml (passphrase via stdin)
+          echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
+              --passphrase-fd 0 \
               --pinentry-mode loopback \
               --detach-sign --armor repomd.xml
 
@@ -134,6 +136,8 @@ jobs:
           EOF
 
       - name: Sign DEB repository
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           cd deb-packages
 
@@ -141,14 +145,14 @@ jobs:
           KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
 
           # Create InRelease (clearsigned Release file - preferred by modern APT)
-          gpg --default-key $KEY_ID --batch --yes \
-              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+          echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
+              --passphrase-fd 0 \
               --pinentry-mode loopback \
               --clearsign --output InRelease Release
 
           # Create Release.gpg (detached signature - fallback for older APT)
-          gpg --default-key $KEY_ID --batch --yes \
-              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+          echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
+              --passphrase-fd 0 \
               --pinentry-mode loopback \
               --armor --detach-sign --output Release.gpg Release
 
