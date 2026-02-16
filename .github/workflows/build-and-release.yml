@@ -404,7 +404,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             packages/*.rpm packages/*.deb \
-            --title "Tuxgrade v${{ steps.version.outputs.version }}" \
+            --title "Tuxgrade ${{ steps.version.outputs.version }}" \
             --notes-file release-notes.md \
             --verify-tag
 
