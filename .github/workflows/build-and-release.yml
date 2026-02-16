@@ -337,7 +337,7 @@ jobs:
           cat > release-notes.md << 'EOF'
           ## Tuxgrade ${{ steps.version.outputs.version }}
 
-          **🔒 Security:** RPM packages are cryptographically signed. DEB packages are distributed via a GPG-signed APT repository for secure installation.
+          **🔒 Security:** DEB and RPM packages are distributed via a GPG-signed APT repository for secure installation.
 
           ### Installation
 
@@ -378,15 +378,6 @@ jobs:
           ### Security Verification
 
           **GPG Fingerprint:** `F7CF 5667 CC26 2DDC 072F  2274 496C BE37 E61D EE21`
-
-          **Verify package signatures:**
-
-          ```bash
-          # RPM package signature
-          rpm --checksig tuxgrade-${{ steps.version.outputs.version }}-1.fc43.noarch.rpm
-          ```
-
-          **Note:** DEB packages are distributed via a GPG-signed APT repository. Signature verification happens automatically when you install from the repository. For direct .deb installation, the repository signing ensures package authenticity.
 
           ---
 
