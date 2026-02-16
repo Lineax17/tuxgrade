@@ -24,14 +24,16 @@ jobs:
           # Extract version from pyproject.toml
           VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📄 pyproject.toml version: $VERSION"
 
           # Extract version from tag
           TAG_VERSION="$GITHUB_REF_NAME"
           echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "🏷️  Tag version: $TAG_VERSION"
 
           # Validate that tag matches pyproject.toml version
           if [ "$TAG_VERSION" != "$VERSION" ]; then
-            echo "ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
+            echo "❌ ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
             exit 1
           fi
 
@@ -218,14 +220,16 @@ jobs:
           # Extract version from pyproject.toml
           VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📄 pyproject.toml version: $VERSION"
 
           # Extract version from tag
           TAG_VERSION="$GITHUB_REF_NAME"
           echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "🏷️  Tag version: $TAG_VERSION"
 
           # Validate that tag matches pyproject.toml version
           if [ "$TAG_VERSION" != "$VERSION" ]; then
-            echo "ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
+            echo "❌ ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
             exit 1
           fi
 
