@@ -150,6 +150,12 @@ jobs:
       - name: Verify RPM Signatures
         run: |
           echo "🔍 Verifying RPM signatures..."
+
+          # Import public key into RPM database for verification
+          gpg --armor --export > /tmp/gpg-pubkey.asc
+          sudo rpm --import /tmp/gpg-pubkey.asc
+
+          # Verify signatures
           for rpm in output/*.rpm; do
             if [ -f "$rpm" ]; then
               echo "Checking: $(basename $rpm)"
