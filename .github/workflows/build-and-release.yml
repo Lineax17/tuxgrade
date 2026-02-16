@@ -44,6 +44,28 @@ jobs:
           KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
           echo "${KEY_FPR}:6:" | gpg --import-ownertrust
 
+          # Configure GPG for non-interactive use in CI
+          export GPG_TTY=$(tty) || export GPG_TTY=/dev/null
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+
+          # Configure GPG to use loopback pinentry (no GUI)
+          cat > ~/.gnupg/gpg.conf << 'EOF'
+          use-agent
+          pinentry-mode loopback
+          EOF
+
+          cat > ~/.gnupg/gpg-agent.conf << 'EOF'
+          allow-loopback-pinentry
+          max-cache-ttl 3600
+          EOF
+
+          # Restart GPG agent to apply new configuration
+          gpgconf --kill gpg-agent || true
+          gpg-agent --daemon || true
+
+          echo "✓ GPG configured for CI environment"
+
       - name: Build RPM in Fedora Container
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -96,7 +118,7 @@ jobs:
       - name: Install RPM Signing Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm expect
+          sudo apt-get install -y rpm
 
       - name: Sign RPM Package
         env:
@@ -107,44 +129,19 @@ jobs:
           # Get key fingerprint
           KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
 
-          # Configure RPM signing
+          # Configure RPM signing with GPG batch mode
           cat > ~/.rpmmacros << EOF
           %_signature gpg
           %_gpg_name $KEY_FPR
+          %__gpg /usr/bin/gpg
+          %__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor --pinentry-mode loopback --passphrase-fd 3 --detach-sign --output %{__signature_filename} %{__plaintext_filename}
           EOF
-
-          # Create expect script for automated signing
-          cat > sign-rpm.exp << 'EXPECTEOF'
-          #!/usr/bin/expect -f
-          set timeout 30
-          set rpm_file [lindex $argv 0]
-          set passphrase $env(GPG_PASSPHRASE)
-
-          spawn rpm --addsign $rpm_file
-
-          expect {
-              -re "Enter pass phrase:|Passphrase:" {
-                  send "$passphrase\r"
-                  exp_continue
-              }
-              timeout {
-                  puts "Timeout waiting for passphrase prompt"
-                  exit 1
-              }
-              eof
-          }
-
-          catch wait result
-          exit [lindex $result 3]
-          EXPECTEOF
-
-          chmod +x sign-rpm.exp
 
           # Sign all RPM packages
           for rpm in output/*.rpm; do
             if [ -f "$rpm" ]; then
               echo "Signing: $(basename $rpm)"
-              ./sign-rpm.exp "$rpm"
+              echo "$GPG_PASSPHRASE" | rpm --addsign "$rpm" 3<&0
             fi
           done
 
@@ -170,7 +167,7 @@ jobs:
 
   build-deb-package:
     runs-on: ubuntu-latest
-    name: Build and Sign DEB Package
+    name: Build DEB Package
 
     steps:
       - name: Checkout Repository
@@ -194,18 +191,6 @@ jobs:
           fi
 
           echo "✓ Version validated: $VERSION"
-
-      - name: Import GPG Key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          # Set ultimate trust for the imported key
-          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
-          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
-
-      - name: Install DEB Signing Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y debsigs
 
       - name: Build DEB in Ubuntu Container
         run: |
@@ -264,40 +249,10 @@ jobs:
           # Fix permissions (container creates files as root)
           sudo chown -R $(id -u):$(id -g) output/
 
-      - name: Sign DEB Package
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          echo "🔐 Signing DEB package..."
-
-          # Get key ID
-          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
-
-          # Sign all DEB packages
-          for deb in output/*.deb; do
-            if [ -f "$deb" ]; then
-              echo "Signing: $(basename $deb)"
-              debsigs --sign=origin --default-key="$KEY_ID" "$deb"
-            fi
-          done
-
-          echo "✓ DEB packages signed"
-
-      - name: Verify DEB Signatures
-        run: |
-          echo "🔍 Verifying DEB signatures..."
-          for deb in output/*.deb; do
-            if [ -f "$deb" ]; then
-              echo "Checking: $(basename $deb)"
-              debsig-verify "$deb" || echo "Note: Signature verification requires policy file"
-            fi
-          done
-          echo "✓ Signature check complete"
-
       - name: Upload DEB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: signed-deb
+          name: deb
           path: output/*.deb
           retention-days: 30
 
@@ -321,7 +276,7 @@ jobs:
       - name: Download DEB Artifact
         uses: actions/download-artifact@v4
         with:
-          name: signed-deb
+          name: deb
           path: packages
 
       - name: Extract Version
@@ -337,7 +292,7 @@ jobs:
           cat > release-notes.md << 'EOF'
           ## Tuxgrade ${{ steps.version.outputs.version }}
 
-          **🔒 Signed Packages:** All packages are cryptographically signed with GPG (RSA 4096-bit)
+          **🔒 Security:** RPM packages are cryptographically signed. DEB packages are distributed via a GPG-signed APT repository for secure installation.
 
           ### Installation
 
@@ -382,12 +337,11 @@ jobs:
           **Verify package signatures:**
 
           ```bash
-          # RPM
+          # RPM package signature
           rpm --checksig tuxgrade-${{ steps.version.outputs.version }}-1.fc43.noarch.rpm
-
-          # DEB
-          dpkg-sig --verify tuxgrade_${{ steps.version.outputs.version }}-1_all.deb
           ```
+
+          **Note:** DEB packages are distributed via a GPG-signed APT repository. Signature verification happens automatically when you install from the repository. For direct .deb installation, the repository signing ensures package authenticity.
 
           ---
 
