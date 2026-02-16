@@ -1,5 +1,5 @@
 Name:           tuxgrade
-Version:        3.0.0
+Version:        3.0.1
 Release:        1%{?dist}
 Summary:        Automated system upgrade script for several Linux distributions
 
@@ -38,25 +38,3 @@ Alternative commands: fedora-update, fedora-upgrade, fuck
 %{_bindir}/fedora-update
 %{_bindir}/fedora-upgrade
 %{_bindir}/fuck
-
-%changelog
-* Sat Feb 07 2026 Lineax17 <lineax17@gmail.com> - 3.0.0-1
-- change branding to tuxgrade
-- add multidistro-support including following distros:
-    - debian
-    - linuxmint
-    - ubuntu
-    - pop 
-    - zorin
-    - fedora
-    - rhel
-    - rocky 
-    - almalinux
-
-* Sat Jan 03 2026 Lineax17 <lineax17@gmail.com> - 2.0.1-1
-- fix minor visual issues
-- remove dnf5 hardlock to enable dnf4 support (tested with dnf 4.19 on Fedora 40)
-
-* Sat Dec 27 2025 Lineax17 <lineax17@gmail.com> - 2.0.0-1
-- Complete Python rewrite for better maintainability
-- Improved error handling and modular architecture

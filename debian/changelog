@@ -1,3 +1,11 @@
+tuxgrade (3.0.1-1) unstable; urgency=medium
+
+  * GPG repository signing with RSA 4096-bit
+  * Automated build and release pipeline via GitHub Actions
+  * Signed DEB and RPM packages
+
+ -- Lineax17 <lineax17@gmail.com>  Mon, 16 Feb 2026 12:00:00 +0100
+
 tuxgrade (3.0.0-1) unstable; urgency=medium
 
   * Change branding to tuxgrade

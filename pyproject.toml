@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 # ============================================================================
 [project]
 name = "tuxgrade"
-version = "3.0.0"
+version = "3.0.1"
 description = "Automated system upgrade script for several Linux distributions with DNF, Flatpak, Snap, and Homebrew support"
 readme = "README.md"
 license = {text = "MIT"}
