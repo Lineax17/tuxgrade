@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - GPG repository signing with RSA 4096-bit
 - Automated build and release pipeline via GitHub Actions
-- Signed DEB and RPM packages
+- Signed DEB and RPM repos
 
 ### Changed
 - Improved repository security with cryptographic signatures
