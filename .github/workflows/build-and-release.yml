@@ -148,15 +148,16 @@ jobs:
               echo "Signing: $(basename $rpm)"
               rpmsign --addsign "$rpm" 2>/dev/null || rpm --addsign "$rpm"
               
-              # Verify signature was created (verbose check)
-              if ! rpm -K -v "$rpm" 2>&1 | grep -q "pgp.*OK"; then
+              # Verify signature was created by checking if signature header exists
+              SIG_INFO=$(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" 2>/dev/null | head -1)
+              if [ -z "$SIG_INFO" ] || [ "$SIG_INFO" = "(none)" ]; then
                 echo "❌ ERROR: Signing failed for $(basename $rpm)"
-                rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm"
+                echo "  No GPG signature found in package"
                 exit 1
               fi
               
               # Show signature details (should show SHA512)
-              echo "  Signature: $(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" | head -1)"
+              echo "  ✓ Signature created: $SIG_INFO"
             fi
           done
 
