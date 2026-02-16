@@ -18,8 +18,8 @@ jobs:
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
           # Set ultimate trust for the imported key
-          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
-          echo "${KEY_ID}:6:" | gpg --import-ownertrust
+          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
 
       - name: Install Podman
         run: |
@@ -83,8 +83,8 @@ jobs:
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
           # Set ultimate trust for the imported key
-          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
-          echo "${KEY_ID}:6:" | gpg --import-ownertrust
+          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
 
       - name: Download Release DEBs
         uses: robinraju/release-downloader@v1.9
