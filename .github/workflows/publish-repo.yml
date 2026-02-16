@@ -14,6 +14,11 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import-ownertrust
+
       - name: Install Podman
         run: |
           sudo apt-get update
@@ -38,6 +43,26 @@ jobs:
               createrepo_c rpm-packages
             "
 
+      - name: Sign RPM repository
+        run: |
+          cd rpm-packages/repodata
+
+          # Get Key ID dynamically
+          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
+
+          # Sign repomd.xml
+          gpg --default-key $KEY_ID --batch --yes \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --pinentry-mode loopback \
+              --detach-sign --armor repomd.xml
+
+          cd ..
+
+          # Copy public key for DNF (with conventional RPM key name)
+          cp ../extras/tuxgrade-archive-keyring.gpg RPM-GPG-KEY-tuxgrade
+
+          echo "✓ RPM repository signed"
+
       - name: Upload RPM repository artifact
         uses: actions/upload-artifact@v4
         with:
@@ -51,6 +76,11 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import-ownertrust
 
       - name: Download Release DEBs
         uses: robinraju/release-downloader@v1.9
@@ -98,6 +128,30 @@ jobs:
            ${SHA512_PACKAGES} ${SIZE_PACKAGES} Packages
            ${SHA512_PACKAGES_GZ} ${SIZE_PACKAGES_GZ} Packages.gz
           EOF
+
+      - name: Sign DEB repository
+        run: |
+          cd deb-packages
+
+          # Get Key ID dynamically
+          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
+
+          # Create InRelease (clearsigned Release file - preferred by modern APT)
+          gpg --default-key $KEY_ID --batch --yes \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --pinentry-mode loopback \
+              --clearsign --output InRelease Release
+
+          # Create Release.gpg (detached signature - fallback for older APT)
+          gpg --default-key $KEY_ID --batch --yes \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --pinentry-mode loopback \
+              --armor --detach-sign --output Release.gpg Release
+
+          # Copy public key for users
+          cp ../extras/tuxgrade-archive-keyring.gpg .
+
+          echo "✓ DEB repository signed"
 
       - name: Upload DEB repository artifact
         uses: actions/upload-artifact@v4

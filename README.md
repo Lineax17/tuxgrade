@@ -45,37 +45,44 @@ tuxgrade [options]
 
 ### Fedora / RHEL / Rocky / AlmaLinux
 
-Add the repository:
+1. **Add repository (GPG key is imported automatically):**
 
-```bash
-sudo curl -o /etc/yum.repos.d/tuxgrade.repo https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.repo
-```
+   ```bash
+   sudo curl -fsSL -o /etc/yum.repos.d/tuxgrade.repo \
+     https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.repo
+   ```
 
-Install tuxgrade:
+2. **Install:**
 
-```bash
-sudo dnf install tuxgrade
-```
+   ```bash
+   sudo dnf install tuxgrade
+   ```
+
+   Note: DNF will automatically import and verify the GPG key on first install.
 
 ### Debian / Ubuntu / Linux Mint / Pop!\_OS / Zorin OS
 
-Add the repository:
+1. **Import GPG signing key:**
 
-```bash
-sudo curl -o /etc/apt/sources.list.d/tuxgrade.list https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.list
-```
+   ```bash
+   sudo mkdir -p /usr/share/keyrings
+   sudo curl -fsSL -o /usr/share/keyrings/tuxgrade-archive-keyring.gpg \
+     https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg
+   ```
 
-Update the repository:
+2. **Add repository:**
 
-```bash
-sudo apt update
-```
+   ```bash
+   sudo curl -fsSL -o /etc/apt/sources.list.d/tuxgrade.list \
+     https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.list
+   ```
 
-Install tuxgrade:
+3. **Install:**
 
-```bash
-sudo apt install tuxgrade
-```
+   ```bash
+   sudo apt update
+   sudo apt install tuxgrade
+   ```
 
 ### From Source
 
@@ -85,6 +92,44 @@ For other distributions or development purposes:
 git clone https://github.com/Lineax17/tuxgrade.git
 cd tuxgrade
 pip install .
+```
+
+## Security & Verification
+
+All packages and repository metadata are cryptographically signed with our GPG key.
+
+**Key Details:**
+
+- **Algorithm:** RSA 4096-bit
+- **Fingerprint:** `F7CF 5667 CC26 2DDC 072F  2274 496C BE37 E61D EE21`
+- **Valid until:** February 2031
+- **Post-Quantum migration:** Planned for 2030-2031 (ML-DSA/Dilithium)
+
+**Verify the public key:**
+
+```bash
+curl -fsSL https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg | gpg --show-keys
+```
+
+**Manual signature verification:**
+
+DEB repository:
+
+```bash
+wget https://Lineax17.github.io/tuxgrade/deb/InRelease
+wget https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg
+gpg --import tuxgrade-archive-keyring.gpg
+gpg --verify InRelease
+```
+
+RPM repository:
+
+```bash
+wget https://Lineax17.github.io/tuxgrade/rpm/repodata/repomd.xml
+wget https://Lineax17.github.io/tuxgrade/rpm/repodata/repomd.xml.asc
+wget https://Lineax17.github.io/tuxgrade/rpm/RPM-GPG-KEY-tuxgrade
+gpg --import RPM-GPG-KEY-tuxgrade
+gpg --verify repomd.xml.asc repomd.xml
 ```
 
 ## Documentation

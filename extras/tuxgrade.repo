@@ -2,4 +2,5 @@
 name=Tuxgrade - Linux System Updater
 baseurl=https://Lineax17.github.io/tuxgrade/rpm/
 enabled=1
-gpgcheck=0
+gpgcheck=1
+gpgkey=https://Lineax17.github.io/tuxgrade/rpm/RPM-GPG-KEY-tuxgrade
