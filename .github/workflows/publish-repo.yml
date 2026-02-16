@@ -29,9 +29,39 @@ jobs:
       - name: Download Release RPMs
         uses: robinraju/release-downloader@v1.9
         with:
-          latest: true
+          tag: ${{ github.event.release.tag_name }}
           fileName: "*.noarch.rpm"
           out-file-path: "rpm-packages"
+
+      - name: Verify RPM Version
+        id: verify-rpm
+        run: |
+          # Install rpm tools
+          sudo apt-get update && sudo apt-get install -y rpm
+
+          # Extract version from downloaded RPM
+          RPM_FILE=$(ls rpm-packages/*.rpm | head -n1)
+          RPM_VERSION=$(rpm -qp --queryformat '%{VERSION}' "$RPM_FILE")
+          RPM_RELEASE=$(rpm -qp --queryformat '%{RELEASE}' "$RPM_FILE")
+          RPM_FULL_VERSION="${RPM_VERSION}-${RPM_RELEASE}"
+
+          echo "📦 Downloaded RPM: $(basename $RPM_FILE)"
+          echo "📋 RPM Version: $RPM_VERSION"
+          echo "📋 RPM Release: $RPM_RELEASE"
+          echo "rpm_version=$RPM_VERSION" >> $GITHUB_OUTPUT
+          echo "rpm_full_version=$RPM_FULL_VERSION" >> $GITHUB_OUTPUT
+
+          # Validate version matches release tag (if triggered by release event)
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            EXPECTED_VERSION="${{ github.event.release.tag_name }}"
+            if [ "$RPM_VERSION" != "$EXPECTED_VERSION" ]; then
+              echo "❌ ERROR: Version mismatch!"
+              echo "   Expected: $EXPECTED_VERSION"
+              echo "   Got: $RPM_VERSION"
+              exit 1
+            fi
+            echo "✅ Version verified: $RPM_VERSION matches release tag"
+          fi
 
       - name: Generate RPM repository metadata
         run: |
@@ -100,9 +130,35 @@ jobs:
       - name: Download Release DEBs
         uses: robinraju/release-downloader@v1.9
         with:
-          latest: true
+          tag: ${{ github.event.release.tag_name }}
           fileName: "*.deb"
           out-file-path: "deb-packages"
+
+      - name: Verify DEB Version
+        id: verify-deb
+        run: |
+          # Extract version from downloaded DEB
+          DEB_FILE=$(ls deb-packages/*.deb | head -n1)
+          DEB_VERSION=$(dpkg-deb -f "$DEB_FILE" Version | cut -d'-' -f1)
+          DEB_FULL_VERSION=$(dpkg-deb -f "$DEB_FILE" Version)
+
+          echo "📦 Downloaded DEB: $(basename $DEB_FILE)"
+          echo "📋 DEB Version: $DEB_VERSION"
+          echo "📋 DEB Full Version: $DEB_FULL_VERSION"
+          echo "deb_version=$DEB_VERSION" >> $GITHUB_OUTPUT
+          echo "deb_full_version=$DEB_FULL_VERSION" >> $GITHUB_OUTPUT
+
+          # Validate version matches release tag (if triggered by release event)
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            EXPECTED_VERSION="${{ github.event.release.tag_name }}"
+            if [ "$DEB_VERSION" != "$EXPECTED_VERSION" ]; then
+              echo "❌ ERROR: Version mismatch!"
+              echo "   Expected: $EXPECTED_VERSION"
+              echo "   Got: $DEB_VERSION"
+              exit 1
+            fi
+            echo "✅ Version verified: $DEB_VERSION matches release tag"
+          fi
 
       - name: Generate APT repository metadata
         run: |
@@ -205,6 +261,33 @@ jobs:
           name: deb-repo
           path: combined-repo/deb
 
+      - name: Verify Repository Contents
+        run: |
+          echo "📦 RPM Packages:"
+          ls -lh combined-repo/rpm/*.rpm || echo "No RPM packages found"
+
+          echo ""
+          echo "📦 DEB Packages:"
+          ls -lh combined-repo/deb/*.deb || echo "No DEB packages found"
+
+          # Install tools for version extraction
+          sudo apt-get update && sudo apt-get install -y rpm
+
+          # Extract and display versions
+          if ls combined-repo/rpm/*.rpm 1> /dev/null 2>&1; then
+            RPM_FILE=$(ls combined-repo/rpm/*.rpm | head -n1)
+            RPM_VERSION=$(rpm -qp --queryformat '%{VERSION}' "$RPM_FILE")
+            echo "rpm_version=$RPM_VERSION" >> $GITHUB_ENV
+            echo "📋 RPM Version: $RPM_VERSION"
+          fi
+
+          if ls combined-repo/deb/*.deb 1> /dev/null 2>&1; then
+            DEB_FILE=$(ls combined-repo/deb/*.deb | head -n1)
+            DEB_VERSION=$(dpkg-deb -f "$DEB_FILE" Version | cut -d'-' -f1)
+            echo "deb_version=$DEB_VERSION" >> $GITHUB_ENV
+            echo "📋 DEB Version: $DEB_VERSION"
+          fi
+
       - name: Create index page
         run: |
           cat > combined-repo/index.html << 'EOF'
@@ -251,4 +334,27 @@ jobs:
           path: combined-repo
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "# 🚀 Repository Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 Package Versions" >> $GITHUB_STEP_SUMMARY
+          echo "- **RPM Version:** ${rpm_version:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "- **DEB Version:** ${deb_version:-unknown}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Repository URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **RPM Repo:** https://Lineax17.github.io/tuxgrade/rpm/" >> $GITHUB_STEP_SUMMARY
+          echo "- **DEB Repo:** https://Lineax17.github.io/tuxgrade/deb/" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository Index:** https://Lineax17.github.io/tuxgrade/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Verification" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Clear DNF cache and verify version" >> $GITHUB_STEP_SUMMARY
+          echo "sudo dnf clean metadata && dnf repoquery --repofrompath=tuxgrade,https://Lineax17.github.io/tuxgrade/rpm/ tuxgrade" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Clear APT cache and verify version" >> $GITHUB_STEP_SUMMARY
+          echo "sudo apt update" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
