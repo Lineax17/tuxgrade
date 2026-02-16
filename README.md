@@ -96,7 +96,11 @@ pip install .
 
 ## Security & Verification
 
-All packages and repository metadata are cryptographically signed with our GPG key.
+All repository metadata is cryptographically signed with our GPG key to ensure authenticity and integrity.
+
+**Signature Coverage:**
+- **DEB (APT):** Repository metadata AND individual packages are signed
+- **RPM (DNF/YUM):** Repository metadata is signed (`repo_gpgcheck=1`), individual packages are currently unsigned
 
 **Key Details:**
 
