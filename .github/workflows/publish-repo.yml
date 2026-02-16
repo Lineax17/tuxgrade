@@ -29,7 +29,7 @@ jobs:
       - name: Download Release RPMs
         uses: robinraju/release-downloader@v1.9
         with:
-          tag: ${{ github.event.release.tag_name || 'latest' }}
+          latest: true
           fileName: "*.noarch.rpm"
           out-file-path: "rpm-packages"
 
