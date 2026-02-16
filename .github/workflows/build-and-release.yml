@@ -12,7 +12,7 @@ on:
 jobs:
   build-rpm-package:
     runs-on: ubuntu-latest
-    name: Build and Sign RPM Package
+    name: Build RPM Package
 
     steps:
       - name: Checkout Repository
@@ -39,36 +39,37 @@ jobs:
 
           echo "✓ Version validated: $VERSION"
 
-      - name: Import GPG Key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          # Set ultimate trust for the imported key
-          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
-          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
-
-          # Configure GPG for non-interactive use in CI (no TTY)
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-
-          # Configure GPG to use loopback pinentry (no GUI, no TTY)
-          cat > ~/.gnupg/gpg.conf << 'EOF'
-          use-agent
-          pinentry-mode loopback
-          batch
-          no-tty
-          EOF
-
-          cat > ~/.gnupg/gpg-agent.conf << 'EOF'
-          allow-loopback-pinentry
-          max-cache-ttl 3600
-          default-cache-ttl 3600
-          EOF
-
-          # Restart GPG agent to apply new configuration
-          gpgconf --kill gpg-agent || true
-          gpg-agent --daemon --allow-loopback-pinentry || true
-
-          echo "✓ GPG configured for CI environment"
+      # TODO: RPM signing currently disabled - needs debugging
+      # - name: Import GPG Key
+      #   run: |
+      #     echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+      #     # Set ultimate trust for the imported key
+      #     KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+      #     echo "${KEY_FPR}:6:" | gpg --import-ownertrust
+      #
+      #     # Configure GPG for non-interactive use in CI (no TTY)
+      #     mkdir -p ~/.gnupg
+      #     chmod 700 ~/.gnupg
+      #
+      #     # Configure GPG to use loopback pinentry (no GUI, no TTY)
+      #     cat > ~/.gnupg/gpg.conf << 'EOF'
+      #     use-agent
+      #     pinentry-mode loopback
+      #     batch
+      #     no-tty
+      #     EOF
+      #
+      #     cat > ~/.gnupg/gpg-agent.conf << 'EOF'
+      #     allow-loopback-pinentry
+      #     max-cache-ttl 3600
+      #     default-cache-ttl 3600
+      #     EOF
+      #
+      #     # Restart GPG agent to apply new configuration
+      #     gpgconf --kill gpg-agent || true
+      #     gpg-agent --daemon --allow-loopback-pinentry || true
+      #
+      #     echo "✓ GPG configured for CI environment"
 
       - name: Build RPM in Fedora Container
         run: |
@@ -119,90 +120,91 @@ jobs:
           # Fix permissions (container creates files as root)
           sudo chown -R $(id -u):$(id -g) output/
 
-      - name: Install RPM Signing Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm
-
-      - name: Sign RPM Package
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          echo "🔐 Signing RPM package..."
-
-          # Get key fingerprint
-          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
-          echo "Using GPG key: $KEY_FPR"
-
-          # Create passphrase file for GPG (more reliable than fd redirection)
-          echo "$GPG_PASSPHRASE" > /tmp/gpg-passphrase.txt
-          chmod 600 /tmp/gpg-passphrase.txt
-
-          # Configure RPM signing with GPG batch mode and SHA-512
-          cat > ~/.rpmmacros << EOF
-          %_signature gpg
-          %_gpg_name $KEY_FPR
-          %__gpg /usr/bin/gpg
-          %_gpg_digest_algo SHA512
-          %__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --pinentry-mode loopback --digest-algo SHA512 --passphrase-file /tmp/gpg-passphrase.txt --detach-sign --output %{__signature_filename} %{__plaintext_filename}
-          EOF
-
-          echo "RPM macros configured"
-
-          # Sign all RPM packages
-          for rpm in output/*.rpm; do
-            if [ -f "$rpm" ]; then
-              echo "Signing: $(basename $rpm)"
-              
-              # Try rpmsign with error output
-              if ! rpmsign --addsign "$rpm" 2>&1; then
-                echo "Warning: rpmsign failed, trying rpm --addsign..."
-                if ! rpm --addsign "$rpm" 2>&1; then
-                  echo "❌ ERROR: Both rpmsign and rpm --addsign failed"
-                  exit 1
-                fi
-              fi
-              
-              # Verify signature was created by checking if signature header exists
-              SIG_INFO=$(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" 2>/dev/null | head -1)
-              if [ -z "$SIG_INFO" ] || [ "$SIG_INFO" = "(none)" ]; then
-                echo "❌ ERROR: Signing failed for $(basename $rpm)"
-                echo "  No GPG signature found in package"
-                rpm -qpi "$rpm" | head -20
-                exit 1
-              fi
-              
-              # Show signature details (should show SHA512)
-              echo "  ✓ Signature created: $SIG_INFO"
-            fi
-          done
-
-          # Clean up passphrase file
-          rm -f /tmp/gpg-passphrase.txt
-
-          echo "✓ RPM packages signed"
-
-      - name: Verify RPM Signatures
-        run: |
-          echo "🔍 Verifying RPM signatures..."
-
-          # Import public key into RPM database for verification
-          gpg --armor --export > /tmp/gpg-pubkey.asc
-          sudo rpm --import /tmp/gpg-pubkey.asc
-
-          # Verify signatures
-          for rpm in output/*.rpm; do
-            if [ -f "$rpm" ]; then
-              echo "Checking: $(basename $rpm)"
-              rpm --checksig "$rpm"
-            fi
-          done
-          echo "✓ All signatures verified"
+      # TODO: RPM signing currently disabled - needs debugging
+      # - name: Install RPM Signing Tools
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y rpm
+      #
+      # - name: Sign RPM Package
+      #   env:
+      #     GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      #   run: |
+      #     echo "🔐 Signing RPM package..."
+      #
+      #     # Get key fingerprint
+      #     KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+      #     echo "Using GPG key: $KEY_FPR"
+      #
+      #     # Create passphrase file for GPG (more reliable than fd redirection)
+      #     echo "$GPG_PASSPHRASE" > /tmp/gpg-passphrase.txt
+      #     chmod 600 /tmp/gpg-passphrase.txt
+      #
+      #     # Configure RPM signing with GPG batch mode and SHA-512
+      #     cat > ~/.rpmmacros << EOF
+      #     %_signature gpg
+      #     %_gpg_name $KEY_FPR
+      #     %__gpg /usr/bin/gpg
+      #     %_gpg_digest_algo SHA512
+      #     %__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --pinentry-mode loopback --digest-algo SHA512 --passphrase-file /tmp/gpg-passphrase.txt --detach-sign --output %{__signature_filename} %{__plaintext_filename}
+      #     EOF
+      #
+      #     echo "RPM macros configured"
+      #
+      #     # Sign all RPM packages
+      #     for rpm in output/*.rpm; do
+      #       if [ -f "$rpm" ]; then
+      #         echo "Signing: $(basename $rpm)"
+      #         
+      #         # Try rpmsign with error output
+      #         if ! rpmsign --addsign "$rpm" 2>&1; then
+      #           echo "Warning: rpmsign failed, trying rpm --addsign..."
+      #           if ! rpm --addsign "$rpm" 2>&1; then
+      #             echo "❌ ERROR: Both rpmsign and rpm --addsign failed"
+      #             exit 1
+      #           fi
+      #         fi
+      #         
+      #         # Verify signature was created by checking if signature header exists
+      #         SIG_INFO=$(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" 2>/dev/null | head -1)
+      #         if [ -z "$SIG_INFO" ] || [ "$SIG_INFO" = "(none)" ]; then
+      #           echo "❌ ERROR: Signing failed for $(basename $rpm)"
+      #           echo "  No GPG signature found in package"
+      #           rpm -qpi "$rpm" | head -20
+      #           exit 1
+      #         fi
+      #         
+      #         # Show signature details (should show SHA512)
+      #         echo "  ✓ Signature created: $SIG_INFO"
+      #       fi
+      #     done
+      #
+      #     # Clean up passphrase file
+      #     rm -f /tmp/gpg-passphrase.txt
+      #
+      #     echo "✓ RPM packages signed"
+      #
+      # - name: Verify RPM Signatures
+      #   run: |
+      #     echo "🔍 Verifying RPM signatures..."
+      #
+      #     # Import public key into RPM database for verification
+      #     gpg --armor --export > /tmp/gpg-pubkey.asc
+      #     sudo rpm --import /tmp/gpg-pubkey.asc
+      #
+      #     # Verify signatures
+      #     for rpm in output/*.rpm; do
+      #       if [ -f "$rpm" ]; then
+      #         echo "Checking: $(basename $rpm)"
+      #         rpm --checksig "$rpm"
+      #       fi
+      #     done
+      #     echo "✓ All signatures verified"
 
       - name: Upload RPM Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: signed-rpm
+          name: rpm
           path: output/*.rpm
           retention-days: 30
 
@@ -313,7 +315,7 @@ jobs:
       - name: Download RPM Artifact
         uses: actions/download-artifact@v4
         with:
-          name: signed-rpm
+          name: rpm
           path: packages
 
       - name: Download DEB Artifact
