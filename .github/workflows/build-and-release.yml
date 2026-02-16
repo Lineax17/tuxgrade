@@ -1,0 +1,373 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-rpm-package:
+    runs-on: ubuntu-latest
+    name: Build and Sign RPM Package
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Extract and Validate Version
+        id: version
+        run: |
+          # Extract version from pyproject.toml
+          VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Extract version from tag
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+
+          # Validate that tag matches pyproject.toml version
+          if [ "$TAG_VERSION" != "$VERSION" ]; then
+            echo "ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
+            exit 1
+          fi
+
+          echo "✓ Version validated: $VERSION"
+
+      - name: Import GPG Key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # Set ultimate trust for the imported key
+          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
+
+      - name: Build RPM in Fedora Container
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p output
+
+          echo "🔨 Building RPM package version $VERSION..."
+
+          docker pull docker.io/library/fedora:latest
+
+          docker run --rm \
+            -v "$PWD:/workspace:ro" \
+            -v "$PWD/output:/output:rw" \
+            -w /workspace \
+            docker.io/library/fedora:latest \
+            bash -c "
+              set -e
+              
+              # Install build dependencies
+              dnf -y install rpm-build rpmdevtools python3-devel python3-setuptools pyproject-rpm-macros
+              
+              # Setup rpmbuild directories
+              rpmdev-setuptree
+              
+              # Copy spec file
+              cp /workspace/build/tuxgrade.spec ~/rpmbuild/SPECS/
+              
+              # Create source tarball
+              mkdir -p ~/tuxgrade-${VERSION}
+              cp -r /workspace/src ~/tuxgrade-${VERSION}/
+              cp /workspace/pyproject.toml ~/tuxgrade-${VERSION}/
+              cp /workspace/LICENSE ~/tuxgrade-${VERSION}/
+              cp /workspace/README.md ~/tuxgrade-${VERSION}/
+              tar czf ~/rpmbuild/SOURCES/tuxgrade-${VERSION}.tar.gz -C ~ tuxgrade-${VERSION}
+              
+              # Build RPM
+              rpmbuild -ba ~/rpmbuild/SPECS/tuxgrade.spec
+              
+              # Copy built packages to output
+              cp ~/rpmbuild/RPMS/noarch/*.rpm /output/
+              
+              echo 'RPM package built successfully!'
+            "
+
+          echo "✓ RPM build complete"
+          ls -lh output/
+
+      - name: Sign RPM Package
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "🔐 Signing RPM package..."
+
+          # Get key fingerprint
+          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+
+          # Configure RPM signing
+          cat > ~/.rpmmacros << EOF
+          %_signature gpg
+          %_gpg_name $KEY_FPR
+          EOF
+
+          # Sign all RPM packages
+          for rpm in output/*.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "Signing: $(basename $rpm)"
+              echo "$GPG_PASSPHRASE" | setsid rpm --addsign "$rpm" \
+                --define "_gpg_sign_cmd_extra_args --pinentry-mode=loopback --batch --passphrase-fd=0"
+            fi
+          done
+
+          echo "✓ RPM packages signed"
+
+      - name: Verify RPM Signatures
+        run: |
+          echo "🔍 Verifying RPM signatures..."
+          for rpm in output/*.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "Checking: $(basename $rpm)"
+              rpm --checksig "$rpm"
+            fi
+          done
+          echo "✓ All signatures verified"
+
+      - name: Upload RPM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-rpm
+          path: output/*.rpm
+          retention-days: 30
+
+  build-deb-package:
+    runs-on: ubuntu-latest
+    name: Build and Sign DEB Package
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Extract and Validate Version
+        id: version
+        run: |
+          # Extract version from pyproject.toml
+          VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Extract version from tag
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+
+          # Validate that tag matches pyproject.toml version
+          if [ "$TAG_VERSION" != "$VERSION" ]; then
+            echo "ERROR: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
+            exit 1
+          fi
+
+          echo "✓ Version validated: $VERSION"
+
+      - name: Import GPG Key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # Set ultimate trust for the imported key
+          KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
+          echo "${KEY_FPR}:6:" | gpg --import-ownertrust
+
+      - name: Install DEB Signing Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-sig
+
+      - name: Build DEB in Ubuntu Container
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p output
+
+          echo "🔨 Building DEB package version $VERSION..."
+
+          docker pull docker.io/library/ubuntu:24.04
+
+          docker run --rm \
+            -v "$PWD:/workspace:ro" \
+            -v "$PWD/output:/output:rw" \
+            docker.io/library/ubuntu:24.04 \
+            bash -c "
+              set -e
+              
+              # Prevent interactive prompts
+              export DEBIAN_FRONTEND=noninteractive
+              
+              # Install build dependencies
+              apt-get update
+              apt-get install -y \
+                debhelper \
+                dh-python \
+                python3-all \
+                python3-setuptools \
+                python3-pip \
+                python3-build \
+                python3-distro \
+                pybuild-plugin-pyproject \
+                dpkg-dev \
+                fakeroot
+              
+              # Create build directory
+              mkdir -p /build
+              
+              # Copy project to build directory (need write access for build)
+              cp -r /workspace/* /build/
+              
+              # Change to build directory
+              cd /build
+              
+              # Build the package
+              dpkg-buildpackage -us -uc -b
+              
+              # Copy built packages to output (only .deb files)
+              cp ../*.deb /output/
+              
+              echo 'DEB package built successfully!'
+            "
+
+          echo "✓ DEB build complete"
+          ls -lh output/
+
+      - name: Sign DEB Package
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "🔐 Signing DEB package..."
+
+          # Get key ID (short form for dpkg-sig)
+          KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
+
+          # Sign all DEB packages
+          for deb in output/*.deb; do
+            if [ -f "$deb" ]; then
+              echo "Signing: $(basename $deb)"
+              echo "$GPG_PASSPHRASE" | dpkg-sig --sign builder "$deb" \
+                -k "$KEY_ID" \
+                --batch --passphrase-fd=0
+            fi
+          done
+
+          echo "✓ DEB packages signed"
+
+      - name: Verify DEB Signatures
+        run: |
+          echo "🔍 Verifying DEB signatures..."
+          for deb in output/*.deb; do
+            if [ -f "$deb" ]; then
+              echo "Checking: $(basename $deb)"
+              dpkg-sig --verify "$deb"
+            fi
+          done
+          echo "✓ All signatures verified"
+
+      - name: Upload DEB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-deb
+          path: output/*.deb
+          retention-days: 30
+
+  create-release:
+    needs: [build-rpm-package, build-deb-package]
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download RPM Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-rpm
+          path: packages
+
+      - name: Download DEB Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-deb
+          path: packages
+
+      - name: Extract Version
+        id: version
+        run: |
+          VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate Release Notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          cat > release-notes.md << 'EOF'
+          ## Tuxgrade ${{ steps.version.outputs.version }}
+
+          **🔒 Signed Packages:** All packages are cryptographically signed with GPG (RSA 4096-bit)
+
+          ### Installation
+
+          **Debian / Ubuntu / Linux Mint**
+
+          1. Import GPG key:
+             ```bash
+             sudo mkdir -p /usr/share/keyrings
+             sudo curl -fsSL -o /usr/share/keyrings/tuxgrade-archive-keyring.gpg \
+               https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg
+             ```
+
+          2. Add repository:
+             ```bash
+             sudo curl -fsSL -o /etc/apt/sources.list.d/tuxgrade.list \
+               https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.list
+             ```
+
+          3. Install:
+             ```bash
+             sudo apt update
+             sudo apt install tuxgrade
+             ```
+
+          **Fedora / RHEL / Rocky / AlmaLinux**
+
+          1. Add repository:
+             ```bash
+             sudo curl -fsSL -o /etc/yum.repos.d/tuxgrade.repo \
+               https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.repo
+             ```
+
+          2. Install:
+             ```bash
+             sudo dnf install tuxgrade
+             ```
+
+          ### Security Verification
+
+          **GPG Fingerprint:** `F7CF 5667 CC26 2DDC 072F  2274 496C BE37 E61D EE21`
+
+          **Verify package signatures:**
+
+          ```bash
+          # RPM
+          rpm --checksig tuxgrade-${{ steps.version.outputs.version }}-1.fc43.noarch.rpm
+
+          # DEB
+          dpkg-sig --verify tuxgrade_${{ steps.version.outputs.version }}-1_all.deb
+          ```
+
+          ---
+
+          📚 [Full Documentation](https://github.com/Lineax17/tuxgrade/blob/master/README.md) | 🔐 [Security & Verification](https://github.com/Lineax17/tuxgrade/blob/master/README.md#security--verification)
+          EOF
+
+      - name: List Packages
+        run: |
+          echo "📦 Packages to be released:"
+          ls -lh packages/
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            packages/*.rpm packages/*.deb \
+            --title "Tuxgrade ${{ steps.version.outputs.version }}" \
+            --notes-file release-notes.md \
+            --verify-tag
+
+          echo "✅ Release $GITHUB_REF_NAME created successfully!"
