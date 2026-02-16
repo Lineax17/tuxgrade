@@ -1,9 +1,13 @@
 name: Build and Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
 
 jobs:
   build-rpm-package:
@@ -22,7 +26,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           # Extract version from tag
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="$GITHUB_REF_NAME"
           echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
 
           # Validate that tag matches pyproject.toml version
@@ -146,7 +150,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           # Extract version from tag
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="$GITHUB_REF_NAME"
           echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
 
           # Validate that tag matches pyproject.toml version
@@ -366,7 +370,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             packages/*.rpm packages/*.deb \
-            --title "Tuxgrade ${{ steps.version.outputs.version }}" \
+            --title "Tuxgrade v${{ steps.version.outputs.version }}" \
             --notes-file release-notes.md \
             --verify-tag
 
