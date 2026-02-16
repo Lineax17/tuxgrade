@@ -42,7 +42,11 @@ jobs:
             docker.io/library/fedora:latest \
             bash -c "
               dnf -y install createrepo_c && \
-              createrepo_c rpm-packages
+              createrepo_c \
+                --checksum=sha512 \
+                --compress-type=zstd \
+                --general-compress-type=zstd \
+                rpm-packages
             "
 
       - name: Sign RPM repository
@@ -54,18 +58,23 @@ jobs:
           # Get Key ID dynamically
           KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -n1 | cut -d: -f5)
 
-          # Sign repomd.xml (passphrase via stdin)
+          # Sign repomd.xml with SHA-512 (2026 best practice)
           echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
               --passphrase-fd 0 \
               --pinentry-mode loopback \
+              --digest-algo SHA512 \
+              --personal-digest-preferences SHA512 \
               --detach-sign --armor repomd.xml
+
+          # Verify signature
+          gpg --verify repomd.xml.asc repomd.xml
 
           cd ..
 
           # Copy public key for DNF (with conventional RPM key name)
           cp ../extras/tuxgrade-archive-keyring.gpg RPM-GPG-KEY-tuxgrade
 
-          echo "✓ RPM repository signed"
+          echo "✓ RPM repository signed with SHA-512"
 
       - name: Upload RPM repository artifact
         uses: actions/upload-artifact@v4
@@ -148,18 +157,26 @@ jobs:
           echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
               --passphrase-fd 0 \
               --pinentry-mode loopback \
+              --digest-algo SHA512 \
+              --personal-digest-preferences SHA512 \
               --clearsign --output InRelease Release
 
           # Create Release.gpg (detached signature - fallback for older APT)
           echo "$GPG_PASSPHRASE" | gpg --default-key $KEY_ID --batch --yes \
               --passphrase-fd 0 \
               --pinentry-mode loopback \
+              --digest-algo SHA512 \
+              --personal-digest-preferences SHA512 \
               --armor --detach-sign --output Release.gpg Release
+
+          # Verify signatures
+          gpg --verify InRelease
+          gpg --verify Release.gpg Release
 
           # Copy public key for users
           cp ../extras/tuxgrade-archive-keyring.gpg .
 
-          echo "✓ DEB repository signed"
+          echo "✓ DEB repository signed with SHA-512"
 
       - name: Upload DEB repository artifact
         uses: actions/upload-artifact@v4

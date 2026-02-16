@@ -129,21 +129,39 @@ jobs:
           # Get key fingerprint
           KEY_FPR=$(gpg --list-keys --with-colons | grep '^fpr' | head -n1 | cut -d: -f10)
 
-          # Configure RPM signing with GPG batch mode
+          # Create passphrase file for GPG (more reliable than fd redirection)
+          echo "$GPG_PASSPHRASE" > /tmp/gpg-passphrase.txt
+          chmod 600 /tmp/gpg-passphrase.txt
+
+          # Configure RPM signing with GPG batch mode and SHA-512
           cat > ~/.rpmmacros << EOF
           %_signature gpg
           %_gpg_name $KEY_FPR
           %__gpg /usr/bin/gpg
-          %__gpg_sign_cmd %{__gpg} gpg --batch --no-verbose --no-armor --pinentry-mode loopback --passphrase-fd 3 --detach-sign --output %{__signature_filename} %{__plaintext_filename}
+          %_gpg_digest_algo SHA512
+          %__gpg_sign_cmd %{__gpg} --batch --no-verbose --no-armor --pinentry-mode loopback --digest-algo SHA512 --passphrase-file /tmp/gpg-passphrase.txt --detach-sign --output %{__signature_filename} %{__plaintext_filename}
           EOF
 
           # Sign all RPM packages
           for rpm in output/*.rpm; do
             if [ -f "$rpm" ]; then
               echo "Signing: $(basename $rpm)"
-              echo "$GPG_PASSPHRASE" | rpm --addsign "$rpm" 3<&0
+              rpmsign --addsign "$rpm" 2>/dev/null || rpm --addsign "$rpm"
+              
+              # Verify signature was created (verbose check)
+              if ! rpm -K -v "$rpm" 2>&1 | grep -q "pgp.*OK"; then
+                echo "❌ ERROR: Signing failed for $(basename $rpm)"
+                rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm"
+                exit 1
+              fi
+              
+              # Show signature details (should show SHA512)
+              echo "  Signature: $(rpm -qp --qf '%{SIGPGP:pgpsig}\n' "$rpm" | head -1)"
             fi
           done
+
+          # Clean up passphrase file
+          rm -f /tmp/gpg-passphrase.txt
 
           echo "✓ RPM packages signed"
 
