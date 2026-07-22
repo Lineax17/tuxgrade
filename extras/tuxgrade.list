@@ -1,3 +1,0 @@
-# Tuxgrade - Linux System Updater
-# APT Repository for Debian/Ubuntu
-deb [signed-by=/usr/share/keyrings/tuxgrade-archive-keyring.gpg] https://Lineax17.github.io/tuxgrade/deb/ ./

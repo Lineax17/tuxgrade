@@ -43,48 +43,28 @@ tuxgrade [options]
 
 ## Installation
 
-### Fedora / RHEL / Rocky / AlmaLinux
+### Homebrew
 
-1. **Add repository (GPG key is imported automatically):**
+Tuxgrade is distributed through Homebrew on Linux.
 
-   ```bash
-   sudo curl -fsSL -o /etc/yum.repos.d/tuxgrade.repo \
-     https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.repo
-   ```
+```bash
+brew install Lineax17/tap/tuxgrade
+```
 
-2. **Install:**
+To update Tuxgrade to the latest available version:
 
-   ```bash
-   sudo dnf install tuxgrade
-   ```
+```bash
+brew update
+brew upgrade tuxgrade
+```
 
-   Note: DNF will automatically import and verify the GPG key on first install.
+To uninstall it:
 
-### Debian / Ubuntu / Linux Mint / Pop!\_OS / Zorin OS
+```bash
+brew uninstall tuxgrade
+```
 
-**Note:** The Debian repository does not work at the moment. I am still figuring out how to properly implement the GPG verification.
-
-1. **Import GPG signing key:**
-
-   ```bash
-   sudo mkdir -p /usr/share/keyrings
-   sudo curl -fsSL -o /usr/share/keyrings/tuxgrade-archive-keyring.gpg \
-     https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg
-   ```
-
-2. **Add repository:**
-
-   ```bash
-   sudo curl -fsSL -o /etc/apt/sources.list.d/tuxgrade.list \
-     https://raw.githubusercontent.com/Lineax17/tuxgrade/master/extras/tuxgrade.list
-   ```
-
-3. **Install:**
-
-   ```bash
-   sudo apt update
-   sudo apt install tuxgrade
-   ```
+Tuxgrade is currently distributed exclusively through the official Homebrew tap. DEB and RPM packages are no longer provided.
 
 ### From Source
 
@@ -94,48 +74,6 @@ For other distributions or development purposes:
 git clone https://github.com/Lineax17/tuxgrade.git
 cd tuxgrade
 pip install .
-```
-
-## Security & Verification
-
-All repository metadata is cryptographically signed with our GPG key to ensure authenticity and integrity.
-
-**Signature Coverage:**
-- **DEB (APT):** Repository metadata is signed. Packages are not.
-- **RPM (DNF/YUM):** Repository metadata is signed (`repo_gpgcheck=1`), individual packages are currently unsigned
-
-**Key Details:**
-
-- **Algorithm:** RSA 4096-bit
-- **Fingerprint:** `F7CF 5667 CC26 2DDC 072F  2274 496C BE37 E61D EE21`
-- **Valid until:** February 2031
-- **Post-Quantum migration:** Planned for 2030-2031 (ML-DSA/Dilithium)
-
-**Verify the public key:**
-
-```bash
-curl -fsSL https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg | gpg --show-keys
-```
-
-**Manual signature verification:**
-
-DEB repository:
-
-```bash
-wget https://Lineax17.github.io/tuxgrade/deb/InRelease
-wget https://Lineax17.github.io/tuxgrade/deb/tuxgrade-archive-keyring.gpg
-gpg --import tuxgrade-archive-keyring.gpg
-gpg --verify InRelease
-```
-
-RPM repository:
-
-```bash
-wget https://Lineax17.github.io/tuxgrade/rpm/repodata/repomd.xml
-wget https://Lineax17.github.io/tuxgrade/rpm/repodata/repomd.xml.asc
-wget https://Lineax17.github.io/tuxgrade/rpm/RPM-GPG-KEY-tuxgrade
-gpg --import RPM-GPG-KEY-tuxgrade
-gpg --verify repomd.xml.asc repomd.xml
 ```
 
 ## Documentation
@@ -163,6 +101,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## AI Assistance
 
-AI tools were used to assist in the development of this project, primarily for documentation, help with the build pipeline, and the creation of the DNF and APT repositories.
+AI tools were used to assist in the development of this project, primarily for documentation, help with the build pipeline, and the creation of the deprecated legacy DNF and APT repositories.
 
 The main project (src) contains a few lines of AI-generated code as well, but these have been thoroughly reviewed and tested by me. This project is not AI-generated slop.
