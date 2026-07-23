@@ -22,9 +22,9 @@ class RHELDistro(GenericDistro):
             brew (bool): Enable Homebrew updates (passed to parent class)
         """
         cli_print_utility.print_header("Update DNF Packages")
-        cli_print_utility.print_output(dnf.update_dnf, "Updating DNF packages")
+        cli_print_utility.print_output(dnf.update_dnf)
 
         cli_print_utility.print_header("Clean DNF Cache")
-        cli_print_utility.print_output(dnf.clean_dnf_cache, "Cleaning DNF Cache")
+        cli_print_utility.print_output(dnf.clean_dnf_cache)
 
         super().update(brew)

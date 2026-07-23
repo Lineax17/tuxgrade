@@ -37,19 +37,19 @@ class FedoraDistro(GenericDistro):
             print("No new kernel version detected.")
 
         cli_print_utility.print_header("Update DNF Packages")
-        cli_print_utility.print_output(dnf.update_dnf, "Updating DNF packages")
+        cli_print_utility.print_output(dnf.update_dnf)
 
         cli_print_utility.print_header("Clean DNF Cache")
-        cli_print_utility.print_output(dnf.clean_dnf_cache, "Cleaning DNF Cache")
+        cli_print_utility.print_output(dnf.clean_dnf_cache)
 
         ## Initramfs rebuild if kernel was updated
 
         cli_print_utility.print_header("Rebuild initramfs")
-        cli_print_utility.print_output(lambda: init.rebuild_initramfs(new_kernel), "Rebuilding initramfs")
+        cli_print_utility.print_output(lambda: init.rebuild_initramfs(new_kernel))
 
         ## Nvidia driver rebuild
         cli_print_utility.print_header("Rebuild Nvidia Drivers")
-        cli_print_utility.print_output(nvidia.rebuild_nvidia_modules, "Rebuilding NVIDIA drivers")
+        cli_print_utility.print_output(nvidia.rebuild_nvidia_modules)
 
         # Super call to perform generic updates (Snap, Flatpak, Brew)
         super().update(brew)

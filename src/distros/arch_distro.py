@@ -26,10 +26,10 @@ class ArchDistro(GenericDistro):
         cli_print_utility.print_header("Update Arch Packages")
 
         if(paru.avail()):
-            cli_print_utility.print_output(paru.update_paru, "Updating packages with Paru")
+            cli_print_utility.print_output(paru.update_paru)
         elif(yay.avail()):
-            cli_print_utility.print_output(yay.update_yay, "Updating packages with Yay")
+            cli_print_utility.print_output(yay.update_yay)
         else:
-            cli_print_utility.print_output(pacman.update_pacman, "Updating packages with Pacman")
+            cli_print_utility.print_output(pacman.update_pacman)
 
         super().update(brew)

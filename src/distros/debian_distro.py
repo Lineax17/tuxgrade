@@ -22,6 +22,6 @@ class DebianDistro(GenericDistro):
         """
 
         cli_print_utility.print_header("Update APT Packages")
-        cli_print_utility.print_output(apt.update_apt, "Updating APT packages")
+        cli_print_utility.print_output(apt.update_apt)
 
         super().update(brew)

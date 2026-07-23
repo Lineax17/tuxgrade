@@ -20,13 +20,13 @@ class GenericDistro:
         """
         ## Snap package updates
         cli_print_utility.print_header("Update Snap Packages")
-        cli_print_utility.print_output(snap.update_snap, "Updating Snap packages")
+        cli_print_utility.print_output(snap.update_snap)
 
         ## Flatpak package updates
         cli_print_utility.print_header("Update Flatpak Packages")
-        cli_print_utility.print_output(flatpak.update_flatpak, "Updating Flatpak packages")
+        cli_print_utility.print_output(flatpak.update_flatpak)
 
         ## Homebrew package updates
         if brew:
             cli_print_utility.print_header("Update Homebrew Packages")
-            cli_print_utility.print_output(homebrew.update_brew, "Updating Homebrew packages")
+            cli_print_utility.print_output(homebrew.update_brew)

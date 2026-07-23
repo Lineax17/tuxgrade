@@ -4,12 +4,11 @@ This module provides functions for displaying formatted output in the terminal.
 """
 
 
-def print_output(function, description: str = "Processing"):
+def print_output(function):
     """Execute a function and display its output.
 
     Args:
         function: Callable that performs an operation (no arguments needed).
-        description: Description text (unused, kept for compatibility).
     """
     result = function()
     if isinstance(result, str):
