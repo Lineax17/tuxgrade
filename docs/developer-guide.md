@@ -55,15 +55,17 @@ tuxgrade/
 │   │   ├── init.py             # Initramfs rebuild
 │   │   └── nvidia.py           # NVIDIA driver rebuild
 │   ├── distros/                 # Distribution-specific logic
-│   │   ├── distro_manager.py   # Orchestrates distro updates
 │   │   ├── fedora_distro.py    # Fedora-specific (dnf, akmods)
 │   │   ├── debian_distro.py    # Debian-specific (apt)
-│   │   ├── rhel_distro.py      # RHEL/CentOS (dnf + subscription-manager)
-│   │   ├── ubuntu_distro.py    # Ubuntu family (apt + PPA)
+│   │   ├── rhel_distro.py      # RHEL/CentOS (dnf)
+│   │   ├── arch_distro.py      # Arch Linux (pacman/paru/yay)
 │   │   └── generic_distro.py   # Fallback for unknown distros
 │   ├── package_managers/        # Package manager abstraction
 │   │   ├── dnf.py              # DNF package manager
 │   │   ├── apt.py              # APT package manager
+│   │   ├── pacman.py           # Pacman package manager
+│   │   ├── paru.py             # Paru AUR helper
+│   │   ├── yay.py              # Yay AUR helper
 │   │   ├── flatpak.py          # Flatpak updates
 │   │   ├── snap.py             # Snap updates
 │   │   └── brew.py             # Homebrew updates
@@ -135,12 +137,12 @@ We follow **PEP 8** with some modifications:
 
 ```python
 # Good
-def update_dnf(show_live_output: bool = False) -> None:
+def update_dnf() -> None:
     """Update DNF packages."""
     ...
 
 # Bad - missing type hints
-def update_dnf(show_live_output=False):
+def update_dnf():
     ...
 ```
 
@@ -394,7 +396,7 @@ sudo apt-get install -f  # Install dependencies if needed
 
 ### Breaking Changes
 
-- Renamed --log to --verbose
+- Added Arch Linux support
 ```
 
 ## Common Development Tasks
@@ -420,17 +422,7 @@ except runner.CommandError as e:
     # Decide: continue or exit
 ```
 
-### Add Progress Indicator
 
-```python
-# Silent mode
-cli.run_with_spinner(lambda: my_function(), "Doing something")
-
-# Verbose mode
-if verbose:
-    print("Doing something...")
-    my_function()
-```
 
 ## Troubleshooting
 
@@ -451,7 +443,7 @@ ModuleNotFoundError: No module named 'src'
 cd /path/to/tuxgrade
 
 # Run as a module
-python3 -m src.main --verbose
+python3 -m src.main
 ```
 
 ## Getting Help

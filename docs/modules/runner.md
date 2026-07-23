@@ -33,7 +33,7 @@ except runner.CommandError as e:
 
 ---
 
-### `run(cmd, show_live_output=False, check=True) -> CompletedProcess`
+### `run(cmd, check=True) -> CompletedProcess`
 
 Main command execution function with flexible configuration.
 
@@ -42,7 +42,6 @@ Main command execution function with flexible configuration.
 ```python
 def run(
     cmd: list[str], 
-    show_live_output: bool = False, 
     check: bool = True
 ) -> subprocess.CompletedProcess
 ```
@@ -70,24 +69,12 @@ runner.run(["dnf5", "check-upgrade", "-q", "kernel*"])
 - Handles arguments with spaces correctly
 - No need to escape special characters
 
-### `show_live_output: bool = False`
-
-Controls output display mode.
-
-| Value | Behavior | Use Case |
-|-------|----------|----------|
-| `False` (default) | Captures output, doesn't display | Silent mode, programmatic use |
-| `True` | Displays output in real-time | Verbose mode, user feedback |
+Output is always displayed in real-time in the terminal. When `capture_output` is needed (e.g. for parsing), use the returned `CompletedProcess.stdout` after the command completes.
 
 **Examples:**
 ```python
-# Silent mode - capture output
-result = runner.run(["ls", "-la"])
-print(result.stdout)  # Access captured output
-
-# Verbose mode - show live output
-runner.run(["dnf", "update", "-y"], show_live_output=True)
-# Output appears in terminal as it happens
+# Run command with live output
+runner.run(["dnf", "update", "-y"])
 ```
 
 ### `check: bool = True`
@@ -154,25 +141,16 @@ except runner.CommandError as e:
 
 ## Use Cases
 
-### Use Case 1: Live Output (DNF Updates)
+### Use Case 1: Package Manager Updates
 
-Display package manager output in real-time during updates.
+Run package manager commands with real-time output.
 
 ```python
 from helper import runner
 
 # User sees progress as it happens
-runner.run(
-    ["sudo", "dnf5", "upgrade", "-y"],
-    show_live_output=True
-)
+runner.run(["sudo", "dnf5", "upgrade", "-y"])
 ```
-
-**Behavior:**
-- Output streams to terminal in real-time
-- User can see download progress, installation steps
-- `stdout` and `stderr` are NOT captured
-- Good for long-running, interactive commands
 
 ---
 
@@ -232,21 +210,12 @@ def new_kernel_version() -> bool:
 ### Internal Flow
 
 ```python
-def run(cmd, show_live_output, check):
+def run(cmd, check):
     logging.debug("Executing: %s", " ".join(cmd))
     
     try:
-        if show_live_output:
-            # Real-time output mode
-            result = subprocess.run(cmd, check=check, text=True)
-        else:
-            # Capture mode
-            result = subprocess.run(
-                cmd,
-                check=check,
-                text=True,
-                capture_output=True
-            )
+        # Real-time output mode
+        result = subprocess.run(cmd, check=check, text=True)
         return result
     except subprocess.CalledProcessError as e:
         logging.error("Command failed: %s", " ".join(cmd))
@@ -364,8 +333,7 @@ Each `runner.run()` call:
 ### Long-Running Commands
 
 For long-running commands:
-- Use `show_live_output=True` for user feedback
-- Output is not buffered, streams in real-time
+- Output streams in real-time
 - Process can be interrupted with Ctrl+C
 
 ### Parallel Execution

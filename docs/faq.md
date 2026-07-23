@@ -11,6 +11,7 @@ Tuxgrade is an automated system upgrade tool for multiple Linux distributions th
 **Supported Distributions:**
 - Fedora/RHEL/CentOS/AlmaLinux/Rocky Linux (dnf)
 - Debian/Ubuntu/Pop!_OS/Linux Mint/Zorin OS (apt)
+- Arch Linux/EndeavourOS/CachyOS (pacman/paru/yay)
 
 ### Why use this instead of just `dnf update` or `apt upgrade`?
 
@@ -36,6 +37,7 @@ Yes! Tuxgrade now supports:
 - **Fedora Linux 41+**
 - **RHEL, CentOS, AlmaLinux, Rocky Linux** (DNF-based)
 - **Debian/Ubuntu, Pop!_OS, Linux Mint, Zorin OS** (APT-based)
+- **Arch Linux, EndeavourOS, CachyOS** (Pacman-based)
 - **Other distributions**: Limited functionality via fallback mode
 
 ## Installation Questions
@@ -45,6 +47,7 @@ Yes! Tuxgrade now supports:
 No. The required package manager depends on your distribution:
 - **Fedora/RHEL:** DNF is required
 - **Ubuntu/Debian:** APT is required
+- **Arch:** Pacman is required; Paru/Yay are optional
 - **All distros:** Flatpak, Snap, Homebrew, and akmods are optional
 
 The script will skip updates for tools that aren't installed.
@@ -84,10 +87,7 @@ For backward compatibility:
 fedora-update  # Still works as an alias
 ```
 
-For verbose output:
-```bash
-tuxgrade --verbose
-```
+
 
 ### Does it need sudo?
 
@@ -105,17 +105,10 @@ When prompted for kernel update confirmation, press any key except `y` or `Y`, o
 
 Currently, the script updates all available package managers. You can use the `--brew` flag to optionally include Homebrew. Future versions may add more granular control if many users ask for it.
 
-### Can I see what's happening during updates?
-
-Yes, use verbose mode:
-```bash
-tuxgrade --verbose
-```
-
 ### How do I save update logs?
 
 ```bash
-tuxgrade --verbose 2>&1 | tee ~/update-$(date +%Y%m%d).log
+tuxgrade 2>&1 | tee ~/update-$(date +%Y%m%d).log
 ```
 
 ## Technical Questions
@@ -139,7 +132,7 @@ Python 3.10 or higher. This is because we use:
 No external dependencies. It uses only Python standard library modules:
 - `subprocess`
 - `argparse`
-- `threading`
+
 - `logging`
 - etc.
 

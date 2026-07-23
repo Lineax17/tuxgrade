@@ -9,11 +9,10 @@ Complete API documentation for all modules in Tuxgrade.
   - [init](#init)
   - [nvidia](#nvidia)
 - [Distribution Modules](#distribution-modules)
-  - [distro_manager](#distro_manager)
   - [fedora_distro](#fedora_distro)
   - [debian_distro](#debian_distro)
   - [rhel_distro](#rhel_distro)
-  - [ubuntu_distro](#ubuntu_distro)
+  - [arch_distro](#arch_distro)
   - [generic_distro](#generic_distro)
 - [Package Manager Modules](#package-manager-modules)
   - [dnf](#dnf)
@@ -124,29 +123,7 @@ if kernel.new_kernel_version():
 
 ## Distribution Modules
 
-### distro_manager
 
-Orchestrates system updates by delegating to distribution-specific implementations.
-
-#### `class DistroManager`
-
-Main class for managing distribution-specific updates.
-
-**Methods:**
-
-- `update_system(verbose: bool)`: Performs a complete system update
-- `detect_distro() -> str`: Detects the current Linux distribution
-
-**Example:**
-
-```python
-from distros import distro_manager
-
-manager = distro_manager.DistroManager()
-manager.update_system(verbose=True)
-```
-
----
 
 ### fedora_distro
 
@@ -181,14 +158,14 @@ RHEL/CentOS/AlmaLinux/Rocky-specific update implementation.
 
 ---
 
-### ubuntu_distro
+### arch_distro
 
-Ubuntu family-specific update implementation.
+Arch Linux-specific update implementation.
 
 **Features:**
-- APT package management
-- PPA handling
-- Ubuntu-specific kernel packages
+- Pacman/Paru/Yay package management
+- AUR helper detection
+- Arch-specific kernel handling
 
 ---
 
@@ -219,14 +196,9 @@ Check if DNF is installed on the system.
 
 ---
 
-#### `update_dnf(show_live_output: bool = False) -> None`
+#### `update_dnf() -> None`
 
 Update all DNF packages on the system.
-
-**Args:**
-
-- `show_live_output`: If True, display live update output to terminal.
-  If False, suppress output (default).
 
 **Raises:**
 
@@ -235,29 +207,18 @@ Update all DNF packages on the system.
 **Example:**
 
 ```python
-
 from package_managers import dnf
 
-# Silent update
 dnf.update_dnf()
-
-# Verbose update
-dnf.update_dnf(show_live_output=True)
 ```
 
 ---
 
-#### `clean_dnf_cache(show_live_output: bool = False) -> None`
+#### `clean_dnf_cache() -> None`
 
 Clean DNF package cache and old metadata.
 
 Removes cached packages and old metadata to save disk space.
-Uses `dnf5 clean packages` and `dnf5 clean metadata --setopt=metadata_expire=1d`.
-
-**Args:**
-
-- `show_live_output`: If True, display live output to terminal.
-  If False, suppress output (default).
 
 **Raises:**
 
@@ -266,14 +227,9 @@ Uses `dnf5 clean packages` and `dnf5 clean metadata --setopt=metadata_expire=1d`
 **Example:**
 
 ```python
-
 from package_managers import dnf
 
-# Silent cleanup
 dnf.clean_dnf_cache()
-
-# Verbose cleanup
-dnf.clean_dnf_cache(show_live_output=True)
 ```
 
 **Details:**
@@ -297,15 +253,10 @@ Check if APT is installed on the system.
 
 ---
 
-#### `update_apt(show_live_output: bool = False) -> None`
+#### `update_apt() -> None`
 
 Update all APT packages on the system.
 
-**Args:**
-
-- `show_live_output`: If True, display live update output to terminal.
-  If False, suppress output (default).
-
 **Raises:**
 
 - `RuntimeError`: If APT is not installed on the system.
@@ -315,47 +266,8 @@ Update all APT packages on the system.
 ```python
 from package_managers import apt
 
-# Silent update
 apt.update_apt()
-
-# Verbose update  
-apt.update_apt(show_live_output=True)
 ```
-
----
-
-#### `clean_apt_cache(show_live_output: bool = False) -> None`
-
-Clean APT package cache.
-
-Removes cached packages to save disk space.
-Uses `apt-get clean` and `apt-get autoclean`.
-
-**Args:**
-
-- `show_live_output`: If True, display live output to terminal.
-  If False, suppress output (default).
-
-**Raises:**
-
-- `RuntimeError`: If APT is not installed on the system.
-
-**Example:**
-
-```python
-from package_managers import apt
-
-# Silent cleanup
-apt.clean_apt_cache()
-
-# Verbose cleanup
-apt.clean_apt_cache(show_live_output=True)
-```
-
-**Details:**
-
-- `apt-get clean` - Removes cached package files
-- `apt-get autoclean` - Removes old cached packages
 
 ---
 
@@ -425,14 +337,9 @@ Check if Homebrew is installed on the system.
 
 ---
 
-#### `update_brew(show_live_output: bool = False) -> None`
+#### `update_brew() -> None`
 
 Update all Homebrew packages on the system.
-
-**Args:**
-
-- `show_live_output`: If True, display live update output to terminal.
-  If False, suppress output (default).
 
 **Raises:**
 
@@ -441,10 +348,9 @@ Update all Homebrew packages on the system.
 **Example:**
 
 ```python
-
 from package_managers import brew
 
-brew.update_brew(show_live_output=True)
+brew.update_brew()
 ```
 
 ---
@@ -485,6 +391,8 @@ NVIDIA kernel module rebuild module.
 
 #### `rebuild_nvidia_modules() -> str`
 
+---
+
 Rebuild NVIDIA kernel modules using akmods.
 
 If akmods is not installed, returns a message and skips rebuild.
@@ -516,15 +424,13 @@ Exception raised when a command execution fails.
 
 ---
 
-#### `run(cmd: list[str], show_live_output: bool = False, check: bool = True) -> CompletedProcess`
+#### `run(cmd: list[str], check: bool = True) -> CompletedProcess`
 
-Run a shell command with configurable output and error handling.
+Run a shell command with live output.
 
 **Args:**
 
 - `cmd`: The command to run as a list of strings (e.g., `["ls", "-la"]`).
-- `show_live_output`: If True, displays command output in real-time to terminal.
-  If False, captures output for programmatic access (default).
 - `check`: If True, raises CommandError on non-zero exit codes (default).
   If False, returns CompletedProcess with any exit code.
 
@@ -551,9 +457,6 @@ if result.returncode == 0:
     print("Success")
 else:
     print(f"Failed with code {result.returncode}")
-
-# With live output
-runner.run(["dnf", "update", "-y"], show_live_output=True)
 ```
 
 ---
@@ -562,79 +465,41 @@ runner.run(["dnf", "update", "-y"], show_live_output=True)
 
 Command-line interface utilities module.
 
-#### `print_output(function, verbose: bool = False, description: str = "Processing") -> None`
+#### `print_output(function) -> None`
 
-Execute a function with either verbose output or spinner animation.
-
-In verbose mode, executes the function and displays its output directly.
-In silent mode, shows an animated spinner during execution.
+Execute a function and display its output.
 
 **Args:**
 
-- `function`: Callable that accepts a verbose parameter and performs an operation.
-- `verbose`: If True, show full output; if False, show spinner (default).
-- `description`: Description text to display with the spinner.
+- `function`: Callable that performs an operation (no arguments needed).
 
 **Example:**
 
 ```python
 from helper import cli_print_utility
-from core import dnf
+from package_managers import dnf
 
-cli_print_utility.print_output(dnf.update_dnf, verbose=False, description="Updating DNF")
+cli_print_utility.print_output(dnf.update_dnf)
 ```
 
 ---
 
-#### `run_with_spinner(function, description: str) -> None`
-
-Execute a function while displaying an animated spinner.
-
-Shows a rotating spinner animation during function execution and displays
-a success (✅) or failure (❌) indicator upon completion.
-
-**Args:**
-
-- `function`: Callable to execute (should not accept parameters).
-- `description`: Description message to display with the spinner.
-
-**Raises:**
-
-- `Exception`: Re-raises any exception from the function after showing failure status.
-
-**Example:**
-
-```python
-from helper import cli_print_utility
-
-
-def long_task():
-  time.sleep(5)
-
-
-cli_print_utility.run_with_spinner(long_task, "Processing data")
-```
-
----
-
-#### `print_header(string: str, verbose: bool = False) -> None`
+#### `print_header(string: str) -> None`
 
 Print a formatted header with decorative borders.
 
 Displays the given string as a centered header surrounded by hash symbols.
-Only prints in verbose mode; silently returns in silent mode.
 
 **Args:**
 
 - `string`: The text to display in the header.
-- `verbose`: If True, print the header; if False, do nothing (default).
 
 **Example:**
 
 ```python
 from helper import cli_print_utility
 
-cli.print_header("Update DNF Packages", verbose=True)
+cli.print_header("Update DNF Packages")
 # Outputs:
 # #########################
 # #  Update DNF Packages  #
@@ -749,17 +614,6 @@ if flatpak.check_flatpak_installed():
   flatpak.update_flatpak()
 else:
   print("Flatpak not available")
-```
-
-### Conditional Live Output
-
-```python
-
-from package_managers import dnf
-
-
-def update_with_mode(verbose: bool):
-  dnf.update_dnf(show_live_output=verbose)
 ```
 
 ### Safe Command Execution
