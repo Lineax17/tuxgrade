@@ -1,3 +1,9 @@
+"""APT package manager update module.
+
+This module provides functions to check APT availability and perform
+system package updates using APT.
+"""
+
 from src.helper import runner
 
 def _check_apt_installed() -> bool:
