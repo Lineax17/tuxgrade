@@ -47,7 +47,7 @@ def test_kernel_upgrade_full_simulation():
 
     runner_calls = []
 
-    def runner_side_effect(cmd, check=False, show_live_output=False):
+    def runner_side_effect(cmd, check=False):
         """Return appropriate mock based on command and track calls."""
         runner_calls.append(cmd)
         if "check-upgrade" in cmd and "kernel*" in cmd:
@@ -85,7 +85,7 @@ def test_kernel_upgrade_full_simulation():
             return False
 
         # Simulate the actual DNF update that should happen after confirmation
-        dnf.update_dnf(show_live_output=False)
+        dnf.update_dnf()
 
         # Verify that DNF update was called
         dnf_update_called = any(

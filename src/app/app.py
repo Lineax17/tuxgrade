@@ -7,11 +7,10 @@ from src.helper import cli_print_utility, sudo_keepalive
 
 import distro
 
-def run(verbose: bool, brew: bool) -> int:
+def run(brew: bool) -> int:
     """Main entry point for the application.
 
     Args:
-        verbose: Enable verbose output
         brew: Enable Homebrew updates
 
     Returns:
@@ -21,16 +20,14 @@ def run(verbose: bool, brew: bool) -> int:
     distro_name = distro.name()
     distro_handler = _choose_distro(distro_id)
 
-    cli_print_utility.print_header("Detecting Linux Distribution", verbose)
-    if verbose:
-        print(f"Detected Linux Distribution: {distro_name}")
-    
+    cli_print_utility.print_header("Detecting Linux Distribution")
+    print(f"Detected Linux Distribution: {distro_name}")
 
     sudo_keepalive.start()
 
     try:
         # Perform distro-specific update process
-        distro_handler.update(verbose, brew)
+        distro_handler.update(brew)
         return 0
     except KeyboardInterrupt:
         print("Operation cancelled by user")

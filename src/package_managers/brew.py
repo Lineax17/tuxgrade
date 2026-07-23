@@ -16,17 +16,12 @@ def _check_brew_installed() -> bool:
     result = runner.run(
         ["bash", "-lc", "command -v brew"],
         check=False,
-        show_live_output=False
     )
     return result.returncode == 0
 
 
-def update_brew(show_live_output: bool = False) -> str | None:
+def update_brew() -> str | None:
     """Update all Homebrew packages on the system.
-
-    Args:
-        show_live_output: If True, display live update output to terminal.
-                         If False, suppress output (default).
 
     Returns:
         Status message if Homebrew is not installed, None otherwise.
@@ -35,8 +30,8 @@ def update_brew(show_live_output: bool = False) -> str | None:
         return "Homebrew is not installed on this system."
 
     # Always use login shell to load brew environment
-    runner.run(["bash", "-lc", "brew update"], show_live_output=show_live_output)
-    runner.run(["bash", "-lc", "brew upgrade"], show_live_output=show_live_output)
+    runner.run(["bash", "-lc", "brew update"])
+    runner.run(["bash", "-lc", "brew upgrade"])
     return None
 
 

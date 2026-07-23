@@ -19,19 +19,15 @@ def _check_paru_installed() -> bool:
         return False
     
 
-def update_paru(show_live_output: bool = False):
+def update_paru():
     """Update all paru packages on the system.
-
-    Args:
-        show_live_output: If True, display live update output to terminal.
-                          If False, suppress output (default).
 
     Raises:
         RuntimeError: If paru is not installed on the system.
     """
     if not _check_paru_installed():
         raise RuntimeError("paru is not installed on this system.")
-    runner.run(["sudo", "paru", "-Syu"], show_live_output=show_live_output)
+    runner.run(["sudo", "paru", "-Syu"])
 
 def avail():
     return _check_paru_installed()

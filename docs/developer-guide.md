@@ -17,7 +17,6 @@ Guide for developers who want to contribute to or extend Tuxgrade.
 
 - **Python 3.10+**
 - **Git**
-- **DNF 4/DNF 5** (for Fedora/RHEL testing) or **APT** (for Debian/Ubuntu testing)
 
 ### Clone and Setup
 
