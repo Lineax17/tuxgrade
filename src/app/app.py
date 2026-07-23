@@ -19,7 +19,7 @@ def run(verbose: bool, brew: bool) -> int:
     """
     distro_id = distro.id()
     distro_name = distro.name()
-    distro = _choose_distro(distro_id)
+    distro_handler = _choose_distro(distro_id)
 
     cli_print_utility.print_header("Detecting Linux Distribution", verbose)
     if verbose:
@@ -30,7 +30,7 @@ def run(verbose: bool, brew: bool) -> int:
 
     try:
         # Perform distro-specific update process
-        distro.update(verbose, brew)
+        distro_handler.update(verbose, brew)
         return 0
     except KeyboardInterrupt:
         print("Operation cancelled by user")
