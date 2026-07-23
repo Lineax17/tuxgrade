@@ -1,10 +1,11 @@
 from src.distros.rhel_distro import RHELDistro
-from src.distros import distro_manager
 from src.distros.debian_distro import DebianDistro
 from src.distros.fedora_distro import FedoraDistro
 from src.distros.generic_distro import GenericDistro
+from src.distros.arch_distro import ArchDistro
 from src.helper import cli_print_utility, sudo_keepalive
 
+import distro
 
 def run(verbose: bool, brew: bool) -> int:
     """Main entry point for the application.
@@ -16,8 +17,8 @@ def run(verbose: bool, brew: bool) -> int:
     Returns:
         int: Exit code (0 = success, non-zero = error)
     """
-    distro_id = distro_manager.detect_distro_id()
-    distro_name = distro_manager.detect_distro_name()
+    distro_id = distro.id()
+    distro_name = distro.name()
     distro = _choose_distro(distro_id)
 
     cli_print_utility.print_header("Detecting Linux Distribution", verbose)
@@ -56,5 +57,7 @@ def _choose_distro(distro_id: str):
         return DebianDistro()
     elif distro_id in ("rhel", "rocky", "almalinux"):
         return RHELDistro()
+    elif distro_id in ("arch", "endeavouros", "cachyos"):
+        return ArchDistro()
     else:
         return GenericDistro()

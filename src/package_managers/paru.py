@@ -32,3 +32,6 @@ def update_paru(show_live_output: bool = False):
     if not _check_paru_installed():
         raise RuntimeError("paru is not installed on this system.")
     runner.run(["sudo", "paru", "-Syu"], show_live_output=show_live_output)
+
+def avail():
+    return _check_paru_installed()

@@ -32,3 +32,6 @@ def update_yay(show_live_output: bool = False):
     if not _check_yay_installed():
         raise RuntimeError("yay is not installed on this system.")
     runner.run(["sudo", "yay", "-Syu"], show_live_output=show_live_output)
+
+def avail():
+    return _check_yay_installed()
