@@ -11,7 +11,7 @@ class RHELDistro(GenericDistro):
     Uses DNF package manager for system updates.
     """
 
-    def update(self, verbose, brew):
+    def update(self, brew):
         """
         Perform system update for RHEL-based distributions.
 
@@ -19,13 +19,12 @@ class RHELDistro(GenericDistro):
         calling the generic update routine.
 
         Args:
-            verbose (bool): Enable verbose output
             brew (bool): Enable Homebrew updates (passed to parent class)
         """
-        cli_print_utility.print_header("Update DNF Packages", verbose)
-        cli_print_utility.print_output(dnf.update_dnf, verbose, "Updating DNF packages")
+        cli_print_utility.print_header("Update DNF Packages")
+        cli_print_utility.print_output(dnf.update_dnf)
 
-        cli_print_utility.print_header("Clean DNF Cache", verbose)
-        cli_print_utility.print_output(dnf.clean_dnf_cache, verbose, "Cleaning DNF Cache")
+        cli_print_utility.print_header("Clean DNF Cache")
+        cli_print_utility.print_output(dnf.clean_dnf_cache)
 
-        super().update(verbose, brew)
+        super().update(brew)

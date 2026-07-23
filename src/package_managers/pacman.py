@@ -19,16 +19,12 @@ def _check_pacman_installed() -> bool:
         return False
     
 
-def update_pacman(show_live_output: bool = False):
+def update_pacman():
     """Update all Pacman packages on the system.
-
-    Args:
-        show_live_output: If True, display live update output to terminal.
-                          If False, suppress output (default).
 
     Raises:
         RuntimeError: If Pacman is not installed on the system.
     """
     if not _check_pacman_installed():
         raise RuntimeError("Pacman is not installed on this system.")
-    runner.run(["sudo", "pacman", "-Syu"], show_live_output=show_live_output)
+    runner.run(["sudo", "pacman", "-Syu"])

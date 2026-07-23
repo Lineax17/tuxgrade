@@ -18,6 +18,7 @@ Tuxgrade is designed as a modular Python application that orchestrates system up
 
 - **Fedora/RHEL/CentOS/AlmaLinux/Rocky Linux** - Uses DNF package manager
 - **Debian/Ubuntu/Pop!_OS/Linux Mint/Zorin OS** - Uses APT package manager
+- **Arch Linux/EndeavourOS/CachyOS** - Uses Pacman/Paru/Yay
 - **Generic/Unknown** - Fallback with limited functionality
 
 ### Key Principles
@@ -26,7 +27,7 @@ Tuxgrade is designed as a modular Python application that orchestrates system up
 2. **Multi-Distribution Support** - Automatic detection and distro-specific handling
 3. **Safety** - User confirmation for critical updates (kernel)
 4. **Robustness** - Graceful handling of missing package managers
-5. **Transparency** - Clear feedback in both silent and verbose modes
+5. **Transparency** - Clear feedback during the update process
 
 ## System Architecture
 
@@ -50,7 +51,8 @@ Tuxgrade is designed as a modular Python application that orchestrates system up
 ┌─────────────────┬──────────────┬─────────────────┐
 │ Package Manager │ Core Modules │ Distro-Specific │
 │ Abstraction     │ (kernel,init,│ Implementations │
-│ (dnf, apt, etc.)│  nvidia)     │ (Fedora, Ubuntu)│
+│ (dnf, apt, etc.)│  nvidia)     │ (Fedora, Ubuntu,│
+│                 │              │  Arch)          │
 └─────────────────┴──────────────┴─────────────────┘
 ```
 
@@ -100,8 +102,9 @@ def detect_distro() -> str:
 **Supported Distribution IDs:**
 - `fedora` → FedoraDistro
 - `rhel`, `centos`, `almalinux`, `rocky` → RHELDistro
-- `ubuntu`, `pop`, `linuxmint`, `elementary`, `zorin` → UbuntuDistro  
+- `ubuntu`, `pop`, `linuxmint`, `elementary`, `zorin` → DebianDistro
 - `debian` → DebianDistro
+- `arch`, `endeavouros`, `cachyos` → ArchDistro
 - Others → GenericDistro (fallback)
 
 ### Distro Module Layer (`src/distros/`)
@@ -138,19 +141,12 @@ Debian-specific logic:
 - Debian kernel handling
 - apt-specific maintenance tasks
 
-#### `rhel_distro.py`
+#### `arch_distro.py`
 
-RHEL/CentOS/AlmaLinux/Rocky-specific logic:
-- DNF package management
-- subscription-manager integration
-- RHEL-specific repositories
-
-#### `ubuntu_distro.py`
-
-Ubuntu family-specific logic:
-- APT package management
-- PPA handling
-- Ubuntu-specific kernel packages
+Arch Linux-specific logic:
+- Pacman/Paru/Yay package management
+- AUR helper detection
+- Arch-specific kernel handling
 
 #### `generic_distro.py`
 
@@ -168,6 +164,9 @@ Package managers are abstracted into separate modules:
 - `flatpak.py` - Flatpak (cross-distro)
 - `snap.py` - Snap (cross-distro)
 - `brew.py` - Homebrew (cross-distro)
+- `pacman.py` - Pacman (Arch)
+- `paru.py` - Paru (Arch AUR)
+- `yay.py` - Yay (Arch AUR)
 
 Each module provides:
 - Tool availability check
@@ -189,7 +188,7 @@ def _check_<tool>_installed() -> bool:
     """Private: Check if tool is available"""
     ...
 
-def update_<tool>(show_live_output: bool = False):
+def update_<tool>():
     """Public: Perform update operation"""
     ...
 ```
@@ -207,13 +206,12 @@ def update_<tool>(show_live_output: bool = False):
 
 Central command execution module with three use cases:
 
-1. **Live output** - For interactive updates (DNF)
+1. **Live output** - For interactive updates
 2. **Command existence check** - For tool availability
 3. **Exit code handling** - For special cases (kernel check)
 
 ```python
 def run(cmd: list[str],
-        show_live_output: bool = False,
         check: bool = True) -> CompletedProcess
 ```
 
@@ -222,15 +220,11 @@ def run(cmd: list[str],
 User interface abstraction:
 
 ```python
-def print_output(function, verbose: bool, description: str)
-    # Silent mode: spinner
-    # Verbose mode: live output
+def print_output(function)
+    # Execute function and display its output
 
-def run_with_spinner(function, description: str)
-    # Animated spinner with ✅/❌ status
-
-def print_header(string: str, verbose: bool)
-    # Only in verbose mode
+def print_header(string: str)
+    # Display section header
 ```
 
 #### sudo_keepalive.py
@@ -300,16 +294,16 @@ def is_running() -> bool
     │ Detect OS   │
     └──────┬──────┘
            │
-    ┌──────┴───────────────────────────┐
+    ┌──────┴───────────────────────────────────┐
     │                                  │
-    ▼                                  ▼
-┌─────────────────┐         ┌──────────────────┐
-│ Fedora/RHEL     │         │ Ubuntu/Debian    │
-│ ┌─────────────┐ │         │ ┌──────────────┐ │
-│ │ Use DNF     │ │         │ │ Use APT      │ │
-│ │             │ │         │ │              │ │
-│ │             │ │         │ │              │ │
-│ └─────────────┘ │         │ └──────────────┘ │
+    ▼                                  ▼               ▼
+┌─────────────────┐         ┌──────────────────┐         ┌──────────────┐
+│ Fedora/RHEL     │         │ Ubuntu/Debian    │         │ Arch         │
+│ ┌─────────────┐ │         │ ┌──────────────┐ │         │ ┌──────────┐ │
+│ │ Use DNF     │ │         │ │ Use APT      │ │         │ │ Pacman/  │ │
+│ │             │ │         │ │              │ │         │ │ Paru/Yay │ │
+│ │             │ │         │ │              │ │         │ └──────────┘ │
+│ └─────────────┘ │         │ └──────────────┘ │         └──────────────┘
 └─────────────────┘         └──────────────────┘
 ```
 
@@ -381,25 +375,7 @@ if new_kernel:
 
 **Implementation:** Thread-based keepalive with signal handlers
 
-### 5. Silent vs Verbose Modes
-
-**Decision:** Two distinct modes
-
-**Silent mode:**
-
-- Clean, minimal output
-- Animated spinners
-- ✅/❌ status indicators
-- Target audience: Daily users
-
-**Verbose mode:**
-
-- Live command output
-- Detailed headers
-- Debugging information
-- Target audience: Developers, troubleshooting
-
-### 6. Error Handling Strategy
+### 5. Error Handling Strategy
 
 **Levels of error handling:**
 
@@ -419,7 +395,7 @@ if new_kernel:
    - Ctrl+C handling
    - Signal handlers
 
-### 7. Return vs Raise for Optional Tools
+### 6. Return vs Raise for Optional Tools
 
 **Pattern for optional package managers:**
 
@@ -439,7 +415,7 @@ def update_dnf():
         raise RuntimeError("DNF is required")  # Fail loudly
 ```
 
-### 8. Test Strategy
+### 7. Test Strategy
 
 **Unit tests:** Mock `runner.run()` to test logic without executing commands
 
@@ -450,7 +426,7 @@ with patch('core.kernel.runner.run', return_value=mock_result):
     assert result == True
 ```
 
-### 9. Version Management
+### 8. Version Management
 
 **Single source of truth:** `src/__version__.py`
 
@@ -472,7 +448,7 @@ Referenced by:
 2. Implement pattern:
    ```python
    def _check_<manager>_installed() -> bool
-   def update_<manager>(show_live_output: bool = False)
+    def update_<manager>()
    ```
 3. Add to `main.py` orchestration
 4. Add tests in `tests/test_<manager>.py`

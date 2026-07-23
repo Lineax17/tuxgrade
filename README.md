@@ -15,17 +15,18 @@ A robust and automated system upgrade script for multiple Linux distributions. I
   - Pop OS
   - Linux Mint
   - Zorin OS
+- Arch based
+  - Arch Linux
+  - EndeavourOS
+  - CachyOS
 - Any distribution with Flatpak, Snap, or Homebrew
 
 ## Features
 
-- **Multi-Distribution Support:** Automatically detects your Linux distribution and uses the appropriate package manager (DNF for Fedora/RHEL, APT for Ubuntu/Debian)
+- **Multi-Distribution Support:** Automatically detects your Linux distribution and uses the appropriate package manager (DNF for Fedora/RHEL, APT for Ubuntu/Debian, Pacman for Arch)
 - **Comprehensive Updates:** Updates system packages, Flatpak, Snap, and optionally Homebrew
-- **Kernel Safety:** Detects kernel updates on rolling release distros (like Fedora), requests user confirmation, and automatically rebuilds `initramfs`
+- **Kernel Safety:** Detects kernel updates, requests user confirmation, and automatically rebuilds `initramfs`
 - **NVIDIA Driver Support:** Checks and rebuilds NVIDIA drivers to ensure they persist across kernel updates (Fedora/RHEL)
-- **Modes:**
-  - **Silent (Default):** Clean interface with progress spinners
-  - **Verbose (`-l` / `--verbose`):** Detailed output for debugging or monitoring
 - **Maintenance:** Automatically cleans old package caches and metadata
 
 ## Usage
@@ -34,11 +35,8 @@ A robust and automated system upgrade script for multiple Linux distributions. I
 tuxgrade [options]
 ```
 
-**Note:** For backward compatibility, the commands `fedora-update` and `fedora-upgrade` still work as aliases.
-
 ### Options
 
-- `-l`, `--verbose`: Enable detailed output.
 - `-b`, `--brew`: Include Homebrew packages in the update.
 
 ## Installation

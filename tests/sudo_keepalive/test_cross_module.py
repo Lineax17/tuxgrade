@@ -16,13 +16,13 @@ from src.helper import sudo_keepalive, runner
 
 def module_a():
     """Function that needs sudo in module A."""
-    result = runner.run(["sudo", "whoami"], show_live_output=False)
+    result = runner.run(["sudo", "whoami"])
     return result.stdout.strip()
 
 
 def module_b():
     """Function that needs sudo in module B."""
-    result = runner.run(["sudo", "pwd"], show_live_output=False)
+    result = runner.run(["sudo", "pwd"])
     return result.stdout.strip()
 
 
@@ -58,12 +58,12 @@ def test_nested_function_calls():
 
     def outer_function():
         """Outer function that calls inner function."""
-        runner.run(["sudo", "echo", "outer"], show_live_output=False)
+        runner.run(["sudo", "echo", "outer"])
         return inner_function()
 
     def inner_function():
         """Inner function that also uses sudo."""
-        result = runner.run(["sudo", "echo", "inner"], show_live_output=False)
+        result = runner.run(["sudo", "echo", "inner"])
         return result.returncode == 0
 
     sudo_keepalive.start()

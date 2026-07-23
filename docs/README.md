@@ -39,7 +39,7 @@ This documentation is organized to help both end-users and developers:
 
 ## 🔄 Version
 
-Current documentation version: **3.0.0** (February 2026)
+Current documentation version: **3.1.0** (July 2026)
 
 For older versions, please check the Git history.
 

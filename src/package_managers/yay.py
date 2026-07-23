@@ -19,19 +19,15 @@ def _check_yay_installed() -> bool:
         return False
     
 
-def update_yay(show_live_output: bool = False):
+def update_yay():
     """Update all yay packages on the system.
-
-    Args:
-        show_live_output: If True, display live update output to terminal.
-                          If False, suppress output (default).
 
     Raises:
         RuntimeError: If yay is not installed on the system.
     """
     if not _check_yay_installed():
         raise RuntimeError("yay is not installed on this system.")
-    runner.run(["sudo", "yay", "-Syu"], show_live_output=show_live_output)
+    runner.run(["sudo", "yay", "-Syu"])
 
 def avail():
     return _check_yay_installed()

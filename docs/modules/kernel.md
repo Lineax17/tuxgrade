@@ -224,23 +224,7 @@ else:
     print("No kernel updates available")
 ```
 
-### Silent Mode Integration
 
-```python
-from core import kernel
-from helper import cli_print_utility
-
-cli_print_utility.print_header("Check Kernel Update", verbose)
-
-new_kernel = kernel.new_kernel_version()
-
-if new_kernel:
-    version = kernel.get_new_kernel_version()
-    kernel.confirm_kernel_update(version)
-else:
-    if verbose:
-        print("No new kernel version detected.")
-```
 
 ## Error Handling
 

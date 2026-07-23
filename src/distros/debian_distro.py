@@ -11,18 +11,17 @@ class DebianDistro(GenericDistro):
     (Snap, Flatpak, Homebrew).
     """
 
-    def update(self, verbose, brew):
+    def update(self, brew):
         """Perform system updates for Debian/Ubuntu distributions.
 
         Currently delegates to the parent GenericDistro class to update
         common package managers (Snap, Flatpak, Homebrew).
 
         Args:
-            verbose: If True, show detailed output; if False, show minimal output with spinners.
             brew: If True, include Homebrew package updates.
         """
 
-        cli_print_utility.print_header("Update APT Packages", verbose)
-        cli_print_utility.print_output(apt.update_apt, verbose, "Updating APT packages")
+        cli_print_utility.print_header("Update APT Packages")
+        cli_print_utility.print_output(apt.update_apt)
 
-        super().update(verbose, brew)
+        super().update(brew)

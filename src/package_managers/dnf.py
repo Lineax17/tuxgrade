@@ -20,29 +20,21 @@ def _check_dnf_installed() -> bool:
         return False
 
 
-def update_dnf(show_live_output: bool = False):
+def update_dnf():
     """Update all DNF packages on the system.
-
-    Args:
-        show_live_output: If True, display live update output to terminal.
-                          If False, suppress output (default).
 
     Raises:
         RuntimeError: If DNF is not installed on the system.
     """
     if not _check_dnf_installed():
         raise RuntimeError("DNF is not installed on this system.")
-    runner.run(["sudo", "dnf", "update", "-y"], show_live_output=show_live_output)
+    runner.run(["sudo", "dnf", "update", "-y"])
 
-def clean_dnf_cache(show_live_output: bool = False):
+def clean_dnf_cache():
     """Clean DNF package cache and old metadata.
     
     Removes cached packages and old metadata to save disk space.
     Uses dnf commands like the legacy script.
-    
-    Args:
-        show_live_output: If True, display live output to terminal.
-                         If False, suppress output (default).
     
     Raises:
         RuntimeError: If DNF is not installed on the system.
@@ -51,7 +43,7 @@ def clean_dnf_cache(show_live_output: bool = False):
         raise RuntimeError("DNF is not installed on this system.")
     
     # Clean cached packages
-    runner.run(["sudo", "dnf", "clean", "packages"], show_live_output=show_live_output)
+    runner.run(["sudo", "dnf", "clean", "packages"])
     
     # Clean old metadata
-    runner.run(["sudo", "dnf", "clean", "metadata"], show_live_output=show_live_output)
+    runner.run(["sudo", "dnf", "clean", "metadata"])

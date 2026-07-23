@@ -1,11 +1,8 @@
 """Tuxgrade - Main Entry Point.
 
-This is the main entry point for the Tuxgrade, an automated
-system upgrade script for Fedora Linux with support for DNF, Flatpak, Snap,
-Homebrew, and NVIDIA akmods.
-
-The script provides both silent mode (with progress indicators) and verbose mode
-(detailed output) for system updates.
+This is the main entry point for Tuxgrade, an automated
+system upgrade script for several Linux distributions with support for
+DNF, APT, Pacman, Flatpak, Snap, Homebrew, and NVIDIA akmods.
 """
 from src.app import cli
 

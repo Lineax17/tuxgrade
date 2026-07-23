@@ -28,7 +28,7 @@ def test_basic_functionality():
 
     print("  → Running first sudo command...")
     try:
-        result = runner.run(["sudo", "whoami"], show_live_output=False)
+        result = runner.run(["sudo", "whoami"])
     except runner.CommandError as e:
         print(f"   ❌ FAILED: Command failed: {e}")
         sudo_keepalive.stop()
@@ -39,7 +39,7 @@ def test_basic_functionality():
 
     print("  → Running second sudo command (should not prompt)...")
     try:
-        result = runner.run(["sudo", "pwd"], show_live_output=False)
+        result = runner.run(["sudo", "pwd"])
     except runner.CommandError as e:
         print(f"   ❌ FAILED: Command failed: {e}")
         sudo_keepalive.stop()
@@ -72,7 +72,7 @@ def test_multiple_commands():
     try:
         for i, cmd in enumerate(commands, 1):
             print(f"  → Running command {i}: {' '.join(cmd)}")
-            runner.run(cmd, show_live_output=False)
+            runner.run(cmd)
 
         sudo_keepalive.stop()
         print("   ✅ PASSED: All commands executed successfully")

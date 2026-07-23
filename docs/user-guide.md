@@ -65,12 +65,15 @@ Complete guide for using Tuxgrade.
   - **Fedora Linux** (dnf4/dnf5)
   - **RHEL/CentOS/AlmaLinux/Rocky Linux** (dnf4)
   - **Debian/Ubuntu/Pop!\_OS/Linux Mint/Zorin OS** (apt)
+  - **Arch Linux/EndeavourOS/CachyOS** (pacman/paru/yay)
 - **Python 3.10+** (required)
 - **Package Manager:**
   - **DNF 4 or DNF 5** (for Fedora/RHEL-based distributions)
     - DNF 5: Fedora 41+ (recommended)
     - DNF 4: Version 4.19+ (tested on Fedora 40, AlmaLinux)
   - **APT** (for Debian/Ubuntu-based distributions)
+  - **Pacman** (for Arch-based distributions)
+  - **Paru/Yay** (optional AUR helpers for Arch)
 - **sudo** privileges (required)
 - **Flatpak** (optional, for Flatpak updates)
 - **Snap** (optional, for Snap updates)
@@ -81,30 +84,10 @@ Complete guide for using Tuxgrade.
 
 ### Basic Usage
 
-Run the system update with default settings (silent mode with spinners):
+Run the system update:
 
 ```bash
 tuxgrade
-```
-
-**For backward compatibility:**
-
-```bash
-fedora-update  # Still works as an alias
-```
-
-### Verbose Mode
-
-Show detailed output during the update process:
-
-```bash
-tuxgrade --verbose
-```
-
-or shorter:
-
-```bash
-tuxgrade -l
 ```
 
 ### Include Homebrew Updates
@@ -124,15 +107,13 @@ tuxgrade -b
 ### Combined Options
 
 ```bash
-tuxgrade --verbose --brew
-tuxgrade -l -b
+tuxgrade --brew
 ```
 
 ## Options
 
 | Option      | Short | Description                                         |
 | ----------- | ----- | --------------------------------------------------- |
-| `--verbose` | `-l`  | Enable detailed output for debugging and monitoring |
 | `--brew`    | `-b`  | Include Homebrew packages in the update process     |
 | `--version` |       | Display version information and exit                |
 | `--help`    | `-h`  | Show help message and exit                          |
@@ -141,7 +122,7 @@ tuxgrade -l -b
 
 The update process follows these steps in order:
 
-### 1. Kernel Update Check (Fedora only for now)
+### 1. Kernel Update Check (Fedora only)
 
 - Checks for available kernel updates using the appropriate package manager:
   - Fedora: `dnf5 check-upgrade kernel*` or `dnf check-upgrade kernel*`
@@ -153,9 +134,8 @@ The update process follows these steps in order:
 - Updates all system packages using your distribution's package manager:
   - **Fedora/RHEL:** DNF5 or DNF4
   - **Ubuntu/Debian:** APT
+  - **Arch:** Pacman, Paru, or Yay
 - Refreshes package repositories
-- In verbose mode: shows live update output
-- In silent mode: displays progress spinner
 
 ### 3. Initramfs Rebuild
 
@@ -163,9 +143,9 @@ The update process follows these steps in order:
 - Uses `dracut -f --regenerate-all`
 - Ensures new kernel can boot properly
 
-### 4. NVIDIA Driver Rebuild (Fedora only for now)
+### 4. NVIDIA Driver Rebuild (Fedora/RHEL only)
 
-- Checks if `akmods` is installed (Fedora only for now)
+- Checks if `akmods` is installed (Fedora/RHEL only)
 - Rebuilds NVIDIA kernel modules if present
 - Ensures NVIDIA drivers work with new kernel
 - Skipped on Debian/Ubuntu-based distributions
@@ -214,9 +194,8 @@ The update process follows these steps in order:
 
 **Solution:**
 
-1. Use verbose mode to see what's happening: `tuxgrade --verbose`
-2. Check if a package installation is waiting for user input
-3. Press `Ctrl+C` to cancel and investigate
+1. Check if a package installation is waiting for user input
+2. Press `Ctrl+C` to cancel and investigate
 
 ### Flatpak/Snap Updates Fail
 
@@ -235,13 +214,7 @@ snap refresh
 
 Run tuxgrade regularly (weekly recommended) to keep your system secure and up-to-date.
 
-### 2. Use Verbose Mode for Debugging
 
-If something goes wrong, run with `--verbose` to see detailed output:
-
-```bash
-tuxgrade --verbose
-```
 
 ### 3. Backup Before Major Updates
 
