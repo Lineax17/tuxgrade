@@ -17,7 +17,7 @@ def _check_yay_installed() -> bool:
         return True
     except runner.CommandError:
         return False
-    
+
 
 def update_yay():
     """Update all yay packages on the system.
@@ -27,7 +27,7 @@ def update_yay():
     """
     if not _check_yay_installed():
         raise RuntimeError("yay is not installed on this system.")
-    runner.run(["sudo", "yay", "-Syu"])
+    runner.run(["yay", "-Syu"])
 
 def avail():
     return _check_yay_installed()

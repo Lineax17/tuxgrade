@@ -1,3 +1,5 @@
+from pydoc import cli
+
 from src.package_managers import pacman
 from src.package_managers import paru
 from src.package_managers import yay
@@ -25,11 +27,15 @@ class ArchDistro(GenericDistro):
 
         cli_print_utility.print_header("Update Arch Packages")
 
+        cli_print_utility.print_output(pacman.update_pacman)
+
+        cli_print_utility.print_header("Update AUR Packages")
+
         if(paru.avail()):
             cli_print_utility.print_output(paru.update_paru)
         elif(yay.avail()):
             cli_print_utility.print_output(yay.update_yay)
         else:
-            cli_print_utility.print_output(pacman.update_pacman)
+            cli_print_utility.print_output("No AUR package manager found.")
 
         super().update(brew)
