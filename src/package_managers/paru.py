@@ -17,7 +17,7 @@ def _check_paru_installed() -> bool:
         return True
     except runner.CommandError:
         return False
-    
+
 
 def update_paru():
     """Update all paru packages on the system.
@@ -27,7 +27,7 @@ def update_paru():
     """
     if not _check_paru_installed():
         raise RuntimeError("paru is not installed on this system.")
-    runner.run(["sudo", "paru", "-Syu"])
+    runner.run(["paru", "-Syu"])
 
 def avail():
     return _check_paru_installed()
