@@ -261,7 +261,7 @@ refactor: simplify kernel version extraction
    ```toml
    # pyproject.toml
    [project]
-   version = "3.1.0"
+   version = "3.1.1"
    ```
 
 2. **Update RPM spec changelog:**
@@ -269,7 +269,7 @@ refactor: simplify kernel version extraction
    ```spec
    # build/tuxgrade.spec
    %changelog
-   * Sat Feb 09 2026 Lineax17 <lineax17@gmail.com> - 3.1.0-1
+   * Sat Feb 09 2026 Lineax17 <lineax17@gmail.com> - 3.1.1-1
    - Your changelog entry here
    ```
 
@@ -277,7 +277,7 @@ refactor: simplify kernel version extraction
 
    ```bash
    # debian/changelog
-   tuxgrade (3.1.0-1) unstable; urgency=medium
+   tuxgrade (3.1.1-1) unstable; urgency=medium
 
      * Your changelog entry here
 
@@ -320,10 +320,10 @@ cd build
 
 ```bash
 # Test RPM (Fedora/RHEL)
-sudo dnf install ./build/output/rpm/tuxgrade-3.1.0-1.noarch.rpm
+sudo dnf install ./build/output/rpm/tuxgrade-3.1.1-1.noarch.rpm
 
 # Test DEB (Ubuntu/Debian)
-sudo dpkg -i ./build/output/deb/tuxgrade_3.1.0-1_all.deb
+sudo dpkg -i ./build/output/deb/tuxgrade_3.1.1-1_all.deb
 sudo apt-get install -f  # Install dependencies if needed
 ```
 
@@ -333,7 +333,7 @@ sudo apt-get install -f  # Install dependencies if needed
 
    ```bash
    git add pyproject.toml build/tuxgrade.spec debian/changelog
-   git commit -m "Bump version to 3.1.0"
+   git commit -m "Bump version to 3.1.1"
    git push origin main
    ```
 
@@ -349,14 +349,14 @@ sudo apt-get install -f  # Install dependencies if needed
 3. **Create and push tag:**
 
    ```bash
-   git tag -a v3.1.0 -m "Release version 3.1.0"
-   git push origin v3.1.0
+   git tag -a v3.1.1 -m "Release version 3.1.1"
+   git push origin v3.1.1
    ```
 
 4. **Create GitHub Release and upload packages:**
    - Go to GitHub → Releases → "Draft a new release"
-   - Choose the tag `v3.1.0`
-   - Title: `v3.1.0`
+   - Choose the tag `v3.1.1`
+   - Title: `v3.1.1`
    - Add release notes (changelog)
    - **Upload built packages:**
      - Drag and drop files from `build/output/rpm/*.rpm`
